@@ -323,8 +323,8 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 end
     
 function discrete_calibrate(dd::DebtMod, targets = PP_targets();
-    minβ = 1/(1+0.04),
-    maxβ = 1/(1+0.02),
+    minβ = 1/(1+0.045),
+    maxβ = 1/(1+0.03),
     mind1 = -0.275,
     maxd1 = -0.235,
     mind2 = 0.25,
@@ -344,15 +344,17 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
     for (jβ, βv) in enumerate(gr_β), (jd1, d1v) in enumerate(gr_d1), (jd2, d2v) in enumerate(gr_d2), (jθ, θv) in enumerate(gr_θ)
 
         dd.pars[:β] = βv
-        dd.pars[:d1]= d1
-        dd.pars[:d2]= d2
-        dd.pars[:θ] = θ
+        dd.pars[:d1]= d1v
+        dd.pars[:d2]= d2v
+        dd.pars[:θ] = θv
 
-        mpe!(dd)
+        print("Trying with (β, d1, d2, θ) = ($βv, $d1v, $d2v, $θv)\n")
+
+        flag = mpe!(dd, min_iter = 10, verbose = false)
 
         w, t, m = calib_targets(dd)
 
-        if w < W
+        if flag && w < W
             W = w
 
             for key in [:β, :d1, :d2, :θ]
