@@ -258,10 +258,11 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     W = ones(length(keys), length(keys))
 
+    table_moments(pv, pv_uncond, savetable = false)
+
     objective = (targets_vec - moments_vec)' * W * (targets_vec - moments_vec)
     objective, targets_vec, moments_vec
 end
-
 
 function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
 
@@ -279,4 +280,86 @@ function solve_eval_α(dd::DebtMod, α)
     Ny = length(dd.gr[:y])
     mpe!(dd)
     return dd.v[:V][1, ceil(Int, Ny / 2)]
+end
+
+
+function calibrate(dd::DebtMod, targets = PP_targets();
+    minβ = 1/(1+0.1),
+    mind1 = -0.5,
+    mind2 = 0.2,
+    minθ = 0.5,
+    maxβ = 1/(1+0.015),
+    maxd1 = -0.01,
+    maxd2 = 0.4,
+    maxθ = 3,
+)
+    keys = [:mean_spr, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
+
+    function objective(x)
+        β = x[1]
+        d1 = x[2]
+        d2 = x[3]
+        θ = x[4]
+
+        dd.pars[:β] = β
+        dd.pars[:d1] = d1
+        dd.pars[:d2] = d2
+        dd.pars[:θ] = θ
+
+        println("Trying with (β, d1, d2, θ) = ($β, $d1, $d2, $θ)")
+
+        mpe!(dd, min_iter = 10, verbose=false)
+
+        w, t, m = calib_targets(dd)
+        
+        return w
+    end
+
+    xmin = [minβ, mind1, mind2, minθ]
+    xmax = [maxβ, maxd1, maxd2, maxθ]
+    xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
+
+    res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
+end
+    
+function discrete_calibrate(dd::DebtMod, targets = PP_targets();
+    minβ = 1/(1+0.04),
+    maxβ = 1/(1+0.02),
+    mind1 = -0.275,
+    maxd1 = -0.235,
+    mind2 = 0.25,
+    maxd2 = 0.35,
+    minθ = 0.5,
+    maxθ = 3,
+)
+
+    gr_β = range(minβ, maxβ, length=10)
+    gr_d1= range(mind1, maxd1, length=10)
+    gr_d2= range(mind2, maxd2, length=10)
+    gr_θ = range(minθ, maxθ, length=10)
+
+    W = Inf
+    params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
+
+    for (jβ, βv) in enumerate(gr_β), (jd1, d1v) in enumerate(gr_d1), (jd2, d2v) in enumerate(gr_d2), (jθ, θv) in enumerate(gr_θ)
+
+        dd.pars[:β] = βv
+        dd.pars[:d1]= d1
+        dd.pars[:d2]= d2
+        dd.pars[:θ] = θ
+
+        mpe!(dd)
+
+        w, t, m = calib_targets(dd)
+
+        if w < W
+            W = w
+
+            for key in [:β, :d1, :d2, :θ]
+                params[key] = dd.pars[key]
+            end
+        end
+    end
+
+    return params
 end

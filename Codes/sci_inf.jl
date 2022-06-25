@@ -331,7 +331,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     end
 end
 
-function mpe!(dd::Default; tol=1e-6, maxiter=500, verbose = true)
+function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, verbose = true)
 
     new_v = similar(dd.v[:V])
     new_q = similar(dd.q)
@@ -342,7 +342,7 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, verbose = true)
 
     knots = (dd.gr[:b], dd.gr[:y])
 
-    while dist > tol && iter < maxiter
+    while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
 
         verbose && print("Iteration $iter: ")
