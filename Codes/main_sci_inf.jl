@@ -1,4 +1,4 @@
-using QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, Printf
+using QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, Printf, Random
 
 include("sci_inf.jl")
 include("spreads.jl")

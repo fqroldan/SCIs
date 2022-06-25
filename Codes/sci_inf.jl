@@ -26,7 +26,7 @@ function Default(;
     r=0.01,
     θ=1.6155,
     ψ=0.0385,
-    χ = 0.0025,
+    χ = 0.005,
     α=0,
     τ=0,
     ρ=0.05,
@@ -373,8 +373,7 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, verbose = true)
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
     end
     dist < tol && print("Converged to $(@sprintf("%0.3g", dist)) after $iter iterations.\n")
-    
-    nothing
+    return dist < tol
 end
 
 # @time Optim.optimize(α -> -solve_eval_α(dd, α), -0.1, 8, GoldenSection())
