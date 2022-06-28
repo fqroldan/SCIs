@@ -82,7 +82,7 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
 
     itp_yield = get_yields_itp(dd)
 
-    for jp in eachindex(pv)
+    Threads.@threads for jp in eachindex(pv)
         knots = (dd.gr[:b], dd.gr[:y])
     
         itp_R = interpolate(knots, dd.v[:R], Gridded(Linear()))
