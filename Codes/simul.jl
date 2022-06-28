@@ -232,6 +232,7 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
 end
 
 function simul_table(dd::DebtMod, K = 1_000; kwargs...)
+    Random.seed!(25)
 
     pv_uncond = simulvec(dd, 2_000, burn_in=2_000, Tmax=4_000, stopdef=false)
     pv = simulvec(dd, K)
