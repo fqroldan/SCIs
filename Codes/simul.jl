@@ -348,7 +348,7 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
         dd.pars[:d2]= d2v
         dd.pars[:θ] = θv
 
-        print("Trying with (β, d1, d2, θ) = ($βv, $d1v, $d2v, $θv)\n")
+        print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", βv)), $(@sprintf("%0.3g", d1v)), $(@sprintf("%0.3g", d2v)), $(@sprintf("%0.3g", θv)))\n")
 
         flag = mpe!(dd, min_iter = 10, verbose = false)
 
