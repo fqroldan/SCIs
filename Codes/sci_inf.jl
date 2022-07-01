@@ -38,7 +38,7 @@ function Default(;
     # σy = 0.026,
     Nb=200,
     Ny=21,
-    bmax=1,
+    bmax=1.5,
     std_devs = 3,
     κ = r+ρ,
 )

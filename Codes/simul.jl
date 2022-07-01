@@ -152,7 +152,8 @@ function compute_moments(pv::Vector{SimulPath})
     moments[:mean_sp]  = mean(mean(pp[:sp]) * 1e4 for pp in pv)
     moments[:std_spr]  = mean(std(pp[:spread].*1e4) for pp in pv)
 
-    moments[:debt_gdp] = mean(mean(pp[:b]./pp[:y]) * 100 for pp in pv)
+    # Compare debt to annual GDP
+    moments[:debt_gdp] = mean(mean(pp[:b]./pp[:y]) * 25 for pp in pv)
 
     moments[:rel_vol]  = mean(std(log.(pp[:c])) ./ std(log.(pp[:y])) for pp in pv)
 
@@ -170,7 +171,7 @@ function PP_targets()
         :mean_spr => 815,
         :mean_sp  => 815,
         :std_spr => 458,
-        :debt_gdp => 46,
+        :debt_gdp => 25,
         :rel_vol => 0.87,
         :corr_yc => 0.97,
         :corr_ytb => -0.77,
