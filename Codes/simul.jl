@@ -381,6 +381,7 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
 
         w, t, m = calib_targets(dd)
 
+        print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
         if flag && w < W
             W = w
 
@@ -409,7 +410,7 @@ function discrete_calib(dd::DebtMod, maxiter = 200)
 
         new_p = discrete_calibrate(dd)
 
-        print("Best p so far:\n")
+        print("Best p so far: ")
         print(new_p)
         print("\n")
 
