@@ -176,7 +176,7 @@ function PP_targets()
         :corr_yc => 0.97,
         :corr_ytb => -0.77,
         :corr_ysp => -0.72,
-        :def_prob => 3
+        :def_prob => 5.4
     )
 end
 
@@ -258,7 +258,9 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     targets_vec = [targets[key] for key in keys]
     moments_vec = [moments[key] for key in keys]
 
-    W = ones(length(keys), length(keys))
+    W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1, 0) for key in keys])
+
+
 
     table_moments(pv, pv_uncond, savetable = false)
 
@@ -323,22 +325,45 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
     res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
 end
+
+function discrete_calibrate(dd::DebtMod, targets=PP_targets();
+    βv = dd.pars[:β],
+    d1v = dd.pars[:d1],
+    d2v = dd.pars[:d2],
+    θv = dd.pars[:θ],
+    sβ = 0.005,
+    sd1 = 0.005,
+    sd2 = 0.005,
+    sθ = 0.01
+    )
+
+    minβ = βv - sβ
+    maxβ = βv + sβ
+    mind1 = d1v - sd1
+    maxd1 = d1v + sd1
+    mind2 = d2v - sd2
+    maxd2 = d2v + sd2
+    minθ = θv - sθ
+    maxθ = θv + sθ
     
+    discrete_calibrate(dd, targets, minβ=minβ, maxβ=maxβ, mind1=mind1, maxd1=maxd1, mind2=mind2, maxd2=maxd2, minθ=minθ, maxθ=maxθ)
+end
+
 function discrete_calibrate(dd::DebtMod, targets = PP_targets();
-    minβ = 1/(1+0.045),
+    minβ = 1/(1+0.035),
     maxβ = 1/(1+0.03),
-    mind1 = -0.275,
-    maxd1 = -0.235,
-    mind2 = 0.25,
-    maxd2 = 0.35,
-    minθ = 0.5,
-    maxθ = 3,
+    mind1 = -0.235,
+    maxd1 = -0.245,
+    mind2 = 0.283,
+    maxd2 = 0.284,
+    minθ = 1.9,
+    maxθ = 2,
 )
 
-    gr_β = range(minβ, maxβ, length=10)
-    gr_d1= range(mind1, maxd1, length=10)
-    gr_d2= range(mind2, maxd2, length=10)
-    gr_θ = range(minθ, maxθ, length=10)
+    gr_β = range(minβ, maxβ, length=3)
+    gr_d1= range(mind1, maxd1, length=3)
+    gr_d2= range(mind2, maxd2, length=3)
+    gr_θ = range(minθ, maxθ, length=3)
 
     W = Inf
     params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
@@ -352,7 +377,7 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", βv)), $(@sprintf("%0.3g", d1v)), $(@sprintf("%0.3g", d2v)), $(@sprintf("%0.3g", θv)))\n")
 
-        flag = mpe!(dd, min_iter = 10, verbose = false)
+        flag = mpe!(dd, tol = 5e-6, min_iter = 10, verbose = false)
 
         w, t, m = calib_targets(dd)
 
@@ -366,4 +391,28 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
     end
 
     return params
+end
+
+function update_dd!(dd::DebtMod, params::Dict)
+    for (key, val) in params
+        if haskey(dd.pars, key)
+            dd.pars[key] = val
+        end
+    end
+end
+
+function discrete_calib(dd::DebtMod, maxiter = 200)
+    iter = 0
+    flag = false
+    
+    while iter < maxiter
+
+        new_p = discrete_calibrate(dd)
+
+        print("Best p so far:\n")
+        print(new_p)
+        print("\n")
+
+        update_dd!(dd, new_p)
+    end
 end
