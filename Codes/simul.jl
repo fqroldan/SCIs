@@ -326,14 +326,24 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
 end
 
-function discrete_calibrate(dd::DebtMod, targets=PP_targets();
+function calib_sphere_ρ(dd::DebtMod;
+    ρv, sρ=0.001, kwargs...)
+
+    βv = (1+ρv)^-1
+    βm = (1+ρv+sρ)^-1
+    sβ = βv - βm
+
+    calib_sphere(dd; βv = βv, sβ = sβ, kwargs...)
+end
+
+function calib_sphere(dd::DebtMod; W = Inf,
     βv = dd.pars[:β],
     d1v = dd.pars[:d1],
     d2v = dd.pars[:d2],
     θv = dd.pars[:θ],
-    sβ = 0.005,
-    sd1 = 0.005,
-    sd2 = 0.005,
+    sβ = 0.0025,
+    sd1 = 0.001,
+    sd2 = 0.001,
     sθ = 0.01
     )
 
@@ -346,10 +356,10 @@ function discrete_calibrate(dd::DebtMod, targets=PP_targets();
     minθ = θv - sθ
     maxθ = θv + sθ
     
-    discrete_calibrate(dd, targets, minβ=minβ, maxβ=maxβ, mind1=mind1, maxd1=maxd1, mind2=mind2, maxd2=maxd2, minθ=minθ, maxθ=maxθ)
+    discrete_calibrate(dd, minβ=minβ, maxβ=maxβ, mind1=mind1, maxd1=maxd1, mind2=mind2, maxd2=maxd2, minθ=minθ, maxθ=maxθ, W=W)
 end
 
-function discrete_calibrate(dd::DebtMod, targets = PP_targets();
+function discrete_calibrate(dd::DebtMod;
     minβ = 1/(1+0.035),
     maxβ = 1/(1+0.03),
     mind1 = -0.235,
@@ -358,6 +368,7 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
     maxd2 = 0.284,
     minθ = 1.9,
     maxθ = 2,
+    W = Inf,
 )
 
     gr_β = range(minβ, maxβ, length=3)
@@ -365,7 +376,6 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
     gr_d2= range(mind2, maxd2, length=3)
     gr_θ = range(minθ, maxθ, length=3)
 
-    W = Inf
     params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
 
     for (jβ, βv) in enumerate(gr_β), (jd1, d1v) in enumerate(gr_d1), (jd2, d2v) in enumerate(gr_d2), (jθ, θv) in enumerate(gr_θ)
@@ -391,7 +401,7 @@ function discrete_calibrate(dd::DebtMod, targets = PP_targets();
         end
     end
 
-    return params
+    return params, W
 end
 
 function update_dd!(dd::DebtMod, params::Dict)
@@ -402,17 +412,24 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
-function discrete_calib(dd::DebtMod, maxiter = 200)
+function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
     iter = 0
     flag = false
-    
+    W = Inf
+
     while iter < maxiter
 
-        new_p = discrete_calibrate(dd)
+        ρ = dd.pars[:β]^-1 - 1
+
+        new_p, W = calib_sphere_ρ(dd, ρv=ρ, W=W)
 
         print("Best p so far: ")
         print(new_p)
         print("\n")
+
+        for (key, val) in new_p
+            best_p[key] = val
+        end
 
         update_dd!(dd, new_p)
     end
