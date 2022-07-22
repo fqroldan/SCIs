@@ -29,8 +29,6 @@ Base.getindex(pp::SimulPath, s::Symbol, j::Int64) = pp.data[j, pp.names[s]]
 Base.setindex!(pp::SimulPath, x::Real, j::Int64, s::Symbol) = (pp.data[j, pp.names[s]] = x)
 Base.setindex!(pp::SimulPath, x::Real, s::Symbol, j::Int64) = (pp.data[j, pp.names[s]] = x)
 
-Base.getindex(pp::SimulPath, s::Symbol) = pp.data[:, pp.names[s]]
-
 subpath(pp::SimulPath, t0, t1) = SimulPath(pp.names, pp.data[t0:t1, :])
 
 
@@ -81,22 +79,21 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
     pv = Vector{SimulPath}(undef, K)
 
     itp_yield = get_yields_itp(dd)
+    
+    knots = (dd.gr[:b], dd.gr[:y])
+    itp_R = interpolate(knots, dd.v[:R], Gridded(Linear()))
+    itp_D = interpolate(knots, dd.v[:D], Gridded(Linear()))
+    itp_v = interpolate(knots, dd.v[:V], Gridded(Linear()))
+    itp_prob = interpolate(knots, dd.v[:prob], Gridded(Linear()))
+    itp_b = interpolate(knots, dd.gb, Gridded(Linear()))
+
+    itp_q = interpolate(knots, dd.q, Gridded(Linear()))
+    itp_qD = interpolate(knots, dd.qD, Gridded(Linear()))
+
+    knots = (dd.gr[:b], dd.gr[:y], 1:2)
+    itp_c = interpolate(knots, dd.gc, Gridded(Linear()))
 
     Threads.@threads for jp in eachindex(pv)
-        knots = (dd.gr[:b], dd.gr[:y])
-    
-        itp_R = interpolate(knots, dd.v[:R], Gridded(Linear()))
-        itp_D = interpolate(knots, dd.v[:D], Gridded(Linear()))
-        itp_v = interpolate(knots, dd.v[:V], Gridded(Linear()))
-        itp_prob = interpolate(knots, dd.v[:prob], Gridded(Linear()))
-        itp_b = interpolate(knots, dd.gb, Gridded(Linear()))
-    
-        itp_q = interpolate(knots, dd.q, Gridded(Linear()))
-        itp_qD = interpolate(knots, dd.qD, Gridded(Linear()))
-    
-        knots = (dd.gr[:b], dd.gr[:y], 1:2)
-        itp_c = interpolate(knots, dd.gc, Gridded(Linear()))
-    
         b0 = 0.0
         y0 = mean(dd.gr[:y])
         def = false
@@ -258,13 +255,11 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     targets_vec = [targets[key] for key in keys]
     moments_vec = [moments[key] for key in keys]
 
-    W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1, 0) for key in keys])
-
-
+    W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
 
     table_moments(pv, pv_uncond, savetable = false)
 
-    objective = (targets_vec - moments_vec)' * W * (targets_vec - moments_vec)
+    objective = (targets_vec ./ moments_vec .- 1)' * W * (targets_vec ./ moments_vec .- 1)
     objective, targets_vec, moments_vec
 end
 
@@ -327,8 +322,9 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 end
 
 function calib_sphere_ρ(dd::DebtMod;
-    ρv, sρ=0.001, kwargs...)
+    ρv, sρ=0.0005, kwargs...)
 
+    println("Now with ρ = $ρv")
     βv = (1+ρv)^-1
     βm = (1+ρv+sρ)^-1
     sβ = βv - βm
@@ -342,9 +338,9 @@ function calib_sphere(dd::DebtMod; W = Inf,
     d2v = dd.pars[:d2],
     θv = dd.pars[:θ],
     sβ = 0.0025,
-    sd1 = 0.001,
-    sd2 = 0.001,
-    sθ = 0.01
+    sd1 = 0.0005,
+    sd2 = 0.0005,
+    sθ = 0.005
     )
 
     minβ = βv - sβ
@@ -360,23 +356,23 @@ function calib_sphere(dd::DebtMod; W = Inf,
 end
 
 function discrete_calibrate(dd::DebtMod;
-    minβ = 1/(1+0.035),
+    minβ = 1/(1+0.05),
     maxβ = 1/(1+0.03),
-    mind1 = -0.235,
-    maxd1 = -0.245,
-    mind2 = 0.283,
-    maxd2 = 0.284,
-    minθ = 1.9,
+    mind1 = -0.23,
+    maxd1 = -0.24,
+    mind2 = 0.28,
+    maxd2 = 0.29,
+    minθ = 1.7,
     maxθ = 2,
     W = Inf,
+    params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
 )
 
-    gr_β = range(minβ, maxβ, length=3)
-    gr_d1= range(mind1, maxd1, length=3)
-    gr_d2= range(mind2, maxd2, length=3)
-    gr_θ = range(minθ, maxθ, length=3)
+    gr_β = range(minβ, maxβ, length=20)
+    gr_d1= range(mind1, maxd1, length=20)
+    gr_d2= range(mind2, maxd2, length=20)
+    gr_θ = range(minθ, maxθ, length=20)
 
-    params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
 
     for (jβ, βv) in enumerate(gr_β), (jd1, d1v) in enumerate(gr_d1), (jd2, d2v) in enumerate(gr_d2), (jθ, θv) in enumerate(gr_θ)
 
@@ -418,6 +414,7 @@ function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
     W = Inf
 
     while iter < maxiter
+        iter += 1
 
         ρ = dd.pars[:β]^-1 - 1
 
@@ -426,6 +423,10 @@ function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
         print("Best p so far: ")
         print(new_p)
         print("\n")
+
+        if new_p == best_p
+            break
+        end
 
         for (key, val) in new_p
             best_p[key] = val
