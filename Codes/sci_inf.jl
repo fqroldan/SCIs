@@ -373,7 +373,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, verbose = true)
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
     end
-    dist < tol && print("Converged to $(@sprintf("%0.3g", dist)) after $iter iterations.\n")
+    dist < tol ? print("Converged ") : print("Got ")
+    print("to $(@sprintf("%0.3g", dist)) after $iter iterations.\n")
     return dist < tol
 end
 

@@ -322,7 +322,7 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 end
 
 function calib_sphere_ρ(dd::DebtMod;
-    ρv, sρ=0.0005, kwargs...)
+    ρv, sρ=0.01, kwargs...)
 
     println("Now with ρ = $ρv")
     βv = (1+ρv)^-1
@@ -337,10 +337,10 @@ function calib_sphere(dd::DebtMod; W = Inf,
     d1v = dd.pars[:d1],
     d2v = dd.pars[:d2],
     θv = dd.pars[:θ],
-    sβ = 0.0025,
-    sd1 = 0.0005,
-    sd2 = 0.0005,
-    sθ = 0.005
+    sβ = 0.001,
+    sd1 = 0.01,
+    sd2 = 0.01,
+    sθ = 0.01
     )
 
     minβ = βv - sβ
@@ -368,10 +368,10 @@ function discrete_calibrate(dd::DebtMod;
     params = Dict(key => dd.pars[key] for key in [:β, :d1, :d2, :θ])
 )
 
-    gr_β = range(minβ, maxβ, length=20)
-    gr_d1= range(mind1, maxd1, length=20)
-    gr_d2= range(mind2, maxd2, length=20)
-    gr_θ = range(minθ, maxθ, length=20)
+    gr_β = range(minβ, maxβ, length=11)
+    gr_d1= range(mind1, maxd1, length=11)
+    gr_d2= range(mind2, maxd2, length=11)
+    gr_θ = range(minθ, maxθ, length=11)
 
 
     for (jβ, βv) in enumerate(gr_β), (jd1, d1v) in enumerate(gr_d1), (jd2, d2v) in enumerate(gr_d2), (jθ, θv) in enumerate(gr_θ)
@@ -383,12 +383,12 @@ function discrete_calibrate(dd::DebtMod;
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", βv)), $(@sprintf("%0.3g", d1v)), $(@sprintf("%0.3g", d2v)), $(@sprintf("%0.3g", θv)))\n")
 
-        flag = mpe!(dd, tol = 5e-6, min_iter = 10, verbose = false)
+        flag = mpe!(dd, tol = 1e-5, min_iter = 10, verbose = false)
 
         w, t, m = calib_targets(dd)
 
         print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
-        if flag && w < W
+        if w < W
             W = w
 
             for key in [:β, :d1, :d2, :θ]
@@ -435,3 +435,82 @@ function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
         update_dd!(dd, new_p)
     end
 end
+
+function move_pars_solve!(dd, o_pars, sym, val)
+    update_dd!(dd, o_pars)
+    dd.pars[sym] = val
+    println("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g",dd.pars[:β])), $(@sprintf("%0.3g",dd.pars[:d1])), $(@sprintf("%0.3g",dd.pars[:d2])), $(@sprintf("%0.3g",dd.pars[:θ])))")
+    w, t, m = calib_targets(dd)
+    return w
+end
+
+function gradient_ρ(dd::DebtMod;
+    sρ=0.001,
+    s1=0.0005,
+    s2=0.0005,
+    sθ=0.005
+)
+    pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+
+    w, t, m = calib_targets(dd)
+
+    ρv = dd.pars[:β]^-1 - 1
+    ρ_up = ρv + sρ
+    β_up = (1 + ρ_up)^-1
+
+    d1_up = dd.pars[:d1] + s1
+    d2_up = dd.pars[:d2] + s2
+    θ_up = dd.pars[:θ] + sθ
+
+    w_β = move_pars_solve!(dd, pars, :β, β_up)
+    w_1 = move_pars_solve!(dd, pars, :d1, d1_up)
+    w_2 = move_pars_solve!(dd, pars, :d2, d2_up)
+    w_θ = move_pars_solve!(dd, pars, :θ, θ_up)
+
+    d_β = w - w_β
+    d_1 = w - w_1
+    d_2 = w - w_2
+    d_θ = w - w_θ
+
+    vec = [d_β, d_1, d_2, d_θ]
+
+    vec = vec / norm(vec) * sρ
+
+    pars[:β] += vec[1]
+    pars[:d1] += vec[2]
+    pars[:d2] += vec[3]
+    pars[:θ] += vec[4]
+
+    return pars, w
+end
+
+function discrete_gradient!(best_p, dd::DebtMod, maxiter = 200)
+    iter = 0
+    W = Inf
+
+    while iter < maxiter
+        iter += 1
+
+        new_p, w = gradient_ρ(dd)
+        
+        print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
+
+        if w < W
+            W = w
+        else
+            break
+        end
+
+        print("Best p so far: ")
+        print(new_p)
+        print("\n")
+
+
+        for (key, val) in new_p
+            best_p[key] = val
+        end
+
+        update_dd!(dd, new_p)
+    end
+end
+
