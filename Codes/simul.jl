@@ -259,8 +259,12 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     table_moments(pv, pv_uncond, savetable = false)
 
+    names = [:sp, :std, :debt, :def]
+    indices= [1, 2, 3, 8]
+    dict = Dict(name => targets_vec[indices[jj]]-moments_vec[indices[jj]] for (jj, name) in enumerate(names))
+
     objective = (targets_vec ./ moments_vec .- 1)' * W * (targets_vec ./ moments_vec .- 1)
-    objective, targets_vec, moments_vec
+    objective, targets_vec, moments_vec, dict
 end
 
 function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
@@ -309,7 +313,7 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
         mpe!(dd, min_iter = 10, verbose=false)
 
-        w, t, m = calib_targets(dd)
+        w, t, m, d = calib_targets(dd)
         
         return w
     end
@@ -385,7 +389,7 @@ function discrete_calibrate(dd::DebtMod;
 
         flag = mpe!(dd, tol = 1e-5, min_iter = 10, verbose = false)
 
-        w, t, m = calib_targets(dd)
+        w, t, m, d = calib_targets(dd)
 
         print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
         if w < W
@@ -440,19 +444,21 @@ function move_pars_solve!(dd, o_pars, sym, val)
     update_dd!(dd, o_pars)
     dd.pars[sym] = val
     println("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g",dd.pars[:β])), $(@sprintf("%0.3g",dd.pars[:d1])), $(@sprintf("%0.3g",dd.pars[:d2])), $(@sprintf("%0.3g",dd.pars[:θ])))")
-    w, t, m = calib_targets(dd)
+    mpe!(dd, min_iter = 10, tol = 1e-5, verbose = false)
+    w, t, m, d = calib_targets(dd)
     return w
 end
 
 function gradient_ρ(dd::DebtMod;
     sρ=0.001,
-    s1=0.0005,
-    s2=0.0005,
-    sθ=0.005
+    s1=0.001,
+    s2=0.001,
+    sθ=0.001
 )
     pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
 
-    w, t, m = calib_targets(dd)
+    mpe!(dd, min_iter = 10, tol = 1e-5, verbose = false)
+    w, t, m, d = calib_targets(dd)
 
     ρv = dd.pars[:β]^-1 - 1
     ρ_up = ρv + sρ
@@ -476,7 +482,8 @@ function gradient_ρ(dd::DebtMod;
 
     vec = vec / norm(vec) * sρ
 
-    pars[:β] += vec[1]
+    ρv += vec[1]
+    pars[:β] = (1+ρv)^-1
     pars[:d1] += vec[2]
     pars[:d2] += vec[3]
     pars[:θ] += vec[4]
@@ -495,17 +502,15 @@ function discrete_gradient!(best_p, dd::DebtMod, maxiter = 200)
         
         print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
 
-        if w < W
-            W = w
-        else
+        if w > W
             break
         end
-
+        
         print("Best p so far: ")
         print(new_p)
         print("\n")
-
-
+        
+        W = w
         for (key, val) in new_p
             best_p[key] = val
         end
