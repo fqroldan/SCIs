@@ -32,7 +32,7 @@ Base.setindex!(pp::SimulPath, x::Real, s::Symbol, j::Int64) = (pp.data[j, pp.nam
 subpath(pp::SimulPath, t0, t1) = SimulPath(pp.names, pp.data[t0:t1, :])
 
 
-function iter_simul(b0, y0, def::Bool, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, pars::Dict, min_y, max_y)
+function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, pars::Dict, min_y, max_y)
     ρy, σy, ψ, ℏ, r = (pars[sym] for sym in (:ρy, :σy, :ψ, :ℏ, :r))
 
     if def
@@ -49,8 +49,8 @@ function iter_simul(b0, y0, def::Bool, itp_R, itp_D, itp_prob, itp_c, itp_b, itp
 
     spread = itp_yield(q, y0) - r
     
-    ϵ = rand(Normal(0, 1))
-    yp = exp(ρy * log(y0) + σy * ϵ)
+    # ϵ = rand(Normal(0, 1))
+    yp = exp(ρy * log(y0) + σy * ϵv)
 
     yp = min(max_y, max(min_y, yp))
 
@@ -60,8 +60,8 @@ function iter_simul(b0, y0, def::Bool, itp_R, itp_D, itp_prob, itp_c, itp_b, itp
         prob_def = itp_prob(bp, yp)
     end
 
-    ξ_def = rand()
-    def_p = (ξ_def <= prob_def)
+    # ξ_def = rand()
+    def_p = (ξv <= prob_def)
 
     new_def = (!def && def_p)
 
@@ -75,6 +75,9 @@ end
 function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35, separation = 4, stopdef = true)
 
     cd_sep = cond_defs + separation
+    
+    ϵmat = rand(Normal(0,1), Tmax, K)
+    ξmat = rand(Tmax, K)
 
     pv = Vector{SimulPath}(undef, K)
 
@@ -100,6 +103,9 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
         new_def = false
     
         min_y, max_y = extrema(dd.gr[:y])
+
+        ϵvec = ϵmat[:, jp]
+        ξvec = ξmat[:, jp]
     
         pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp])
     
@@ -108,6 +114,9 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
         t = 0
         while contflag && t < Tmax
             t += 1
+
+            ϵv = ϵvec[t]
+            ξv = ξvec[t]
     
             pp[:y, t] = y0
             pp[:b, t] = b0
@@ -117,7 +126,7 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
     
             pp[:v, t] = itp_v(b0, y0)
     
-            v, def, ct, b0, y0, new_def, q, spread = iter_simul(b0, y0, def, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y)
+            v, def, ct, b0, y0, new_def, q, spread = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y)
     
             pp[:v_cond, t] = v
     
@@ -238,7 +247,7 @@ function simul_table(dd::DebtMod, K = 1_000; kwargs...)
     table_moments(pv, pv_uncond; kwargs...)
 end
 
-function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000)
+function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false))
     targets = PP_targets()
 
     keys = [:mean_spr,
@@ -247,6 +256,9 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     Random.seed!(25)
     pv_uncond = simulvec(dd, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false)
+
+    # print(ϵmat[2,5])
+
     pv = simulvec(dd, cond_K)
 
     moments = compute_moments(pv)
@@ -257,7 +269,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
 
-    table_moments(pv, pv_uncond, savetable = false)
+    showtable && table_moments(pv, pv_uncond, savetable = savetable)
 
     names = [:sp, :std, :debt, :def]
     indices= [1, 2, 3, 8]
@@ -446,7 +458,7 @@ function move_pars_solve!(dd, o_pars, sym, val)
     println("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g",dd.pars[:β])), $(@sprintf("%0.3g",dd.pars[:d1])), $(@sprintf("%0.3g",dd.pars[:d2])), $(@sprintf("%0.3g",dd.pars[:θ])))")
     mpe!(dd, min_iter = 10, tol = 1e-5, verbose = false)
     w, t, m, d = calib_targets(dd)
-    return w
+    return w,t,m,d
 end
 
 function gradient_ρ(dd::DebtMod;
@@ -468,10 +480,10 @@ function gradient_ρ(dd::DebtMod;
     d2_up = dd.pars[:d2] + s2
     θ_up = dd.pars[:θ] + sθ
 
-    w_β = move_pars_solve!(dd, pars, :β, β_up)
-    w_1 = move_pars_solve!(dd, pars, :d1, d1_up)
-    w_2 = move_pars_solve!(dd, pars, :d2, d2_up)
-    w_θ = move_pars_solve!(dd, pars, :θ, θ_up)
+    w_β,tβ,mβ,dβ = move_pars_solve!(dd, pars, :β, β_up)
+    w_1,t1,m1,d1 = move_pars_solve!(dd, pars, :d1, d1_up)
+    w_2,t2,m2,d2 = move_pars_solve!(dd, pars, :d2, d2_up)
+    w_θ,tθ,mθ,dθ = move_pars_solve!(dd, pars, :θ, θ_up)
 
     d_β = w - w_β
     d_1 = w - w_1
@@ -480,7 +492,7 @@ function gradient_ρ(dd::DebtMod;
 
     vec = [d_β, d_1, d_2, d_θ]
 
-    vec = vec / norm(vec) * sρ
+    vec = vec / norm(vec) * norm([sρ, s1, s2, sθ])
 
     ρv += vec[1]
     pars[:β] = (1+ρv)^-1
@@ -491,31 +503,165 @@ function gradient_ρ(dd::DebtMod;
     return pars, w
 end
 
+function gradient_2(dd::DebtMod;
+    s1=0.0025,
+    s2=0.0025,
+)
+    pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+
+    mpe!(dd, min_iter = 10, tol = 1e-5, verbose = false)
+    w, t0, m0, d = calib_targets(dd)
+
+    w0 = (x->sum(x.^2))([t0[1], t0[3]*10] .- [m0[1], m0[3]*10])
+    
+    d1 = pars[:d1]
+    d2 = pars[:d2]
+
+    λ0 = d2 + d1
+    λ1 = -d1
+
+    λ0s = λ0 + s1
+    λ1s = λ1 + s2
+
+    d1_up = -λ1s
+    d2_up = λ0s + λ1s
+
+    w_1,t,m,d = move_pars_solve!(dd, pars, :d1, d1_up)
+    w1 = (x->sum(x.^2))([t[1], t[3]*10] .- [m[1], m[3]*10])
+    
+    w_2,t,m,d = move_pars_solve!(dd, pars, :d2, d2_up)
+    w2 = (x->sum(x.^2))([t[1], t[3]*10] .- [m[1], m[3]*10])
+
+    vec = -[w0 - w1, w0 - w2]
+
+    vec = vec / norm(vec) * norm([s1, s2])
+
+    λ0 += vec[1]
+    λ1 += vec[2]
+
+    pars[:d1] = -λ1
+    pars[:d2] = λ0 + λ1
+
+    return pars, w0
+end
+
 function discrete_gradient!(best_p, dd::DebtMod, maxiter = 200)
     iter = 0
     W = Inf
 
+    new_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+    currbest = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+
     while iter < maxiter
         iter += 1
 
-        new_p, w = gradient_ρ(dd)
-        
-        print("\nCurrent W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
+        for (key, val) in new_p
+            currbest[key] = val
+        end
 
-        if w > W
+        new_p, w = gradient_2(dd)
+        
+        print("\nCurrent inner W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
+
+        if w < W
+            for (key, val) in currbest
+                best_p[key] = val
+            end
+        else
+            break
+        end
+        print("Best p so far: ")
+        print(currbest)
+        print("\n")
+      
+        W = w
+        update_dd!(dd, new_p)
+    end
+    update_dd!(dd, best_p)
+end
+
+function eval_nested!(dd, o_pars, sym, val, n_pars)
+    update_dd!(dd, o_pars)
+    dd.pars[sym] = val
+
+    discrete_gradient!(n_pars, dd)
+
+    println("Trying outer with (β, d1, d2, θ) = ($(@sprintf("%0.3g",dd.pars[:β])), $(@sprintf("%0.3g",dd.pars[:d1])), $(@sprintf("%0.3g",dd.pars[:d2])), $(@sprintf("%0.3g",dd.pars[:θ])))")
+    mpe!(dd, min_iter=10, tol=1e-5, verbose=false)
+    w, t, m, d = calib_targets(dd)
+    return w,t,m,d
+end
+
+
+function gradient_nested(dd::DebtMod;
+    sρ=0.005,
+    sθ=0.01
+)
+
+    o_pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+    n_pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+
+    # mpe!(dd, min_iter=10, tol=1e-5, verbose=false)
+    # w, t, m, d = calib_targets(dd)
+    # w = (x -> sum(x.^2))([t[2], t[end]] - [m[2], m[end]])
+    w, t, m, d = eval_nested!(dd, o_pars, :β, o_pars[:β], n_pars)
+    w = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+    pars_center = Dict(key => val for (key, val) in n_pars)
+
+    ρv = o_pars[:β]^-1 - 1
+
+    ρ1 = ρv + sρ
+    θ1 = o_pars[:θ] + sθ
+
+    β1 = (1 + ρ1)^-1
+
+    wβ, t, m, d = eval_nested!(dd, o_pars, :β, β1, n_pars)
+    wβ = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+
+    wθ, t, m, d = eval_nested!(dd, o_pars, :θ, θ1, n_pars)
+    wθ = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+
+    vec = [w - wβ, w - wθ]
+    vec = vec / norm(vec) * norm([sρ, sθ])
+
+    ρ1 += vec[1]
+    o_pars[:β] = (1 + ρ1)^-1
+    o_pars[:θ] += vec[2]
+
+    return o_pars, w, pars_center
+end
+
+
+function discrete_gradient_nested!(best_p, dd::DebtMod, maxiter = 100)
+    iter = 0
+    W = Inf
+
+    new_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+
+    while iter < maxiter
+        iter += 1
+
+        new_p, w, pars_opt = gradient_nested(dd)
+
+        print("\nCurrent outer W = $(@sprintf("%0.3g", w)), current best = $(@sprintf("%0.3g", W))\n")
+
+        if w < W
+        else
             break
         end
         
-        print("Best p so far: ")
-        print(new_p)
-        print("\n")
-        
-        W = w
-        for (key, val) in new_p
+        for (key, val) in pars_opt
             best_p[key] = val
         end
 
+        print("Best p so far: ")
+        print(best_p)
+        print("\n")
+
+        W = w
         update_dd!(dd, new_p)
     end
-end
 
+    print("\nOuter iters: $iter")
+    update_dd!(dd, best_p)
+end
