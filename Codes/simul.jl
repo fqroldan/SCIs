@@ -332,6 +332,15 @@ function solve_eval_α(dd::DebtMod, α)
 end
 
 
+function update_dd!(dd::DebtMod, params::Dict)
+    for (key, val) in params
+        if haskey(dd.pars, key)
+            dd.pars[key] = val
+        end
+    end
+end
+
+#=
 function calibrate(dd::DebtMod, targets = PP_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
@@ -450,15 +459,6 @@ function discrete_calibrate(dd::DebtMod;
     return params, W
 end
 
-function update_dd!(dd::DebtMod, params::Dict)
-    for (key, val) in params
-        if haskey(dd.pars, key)
-            dd.pars[key] = val
-        end
-    end
-end
-
-#=
 function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
     iter = 0
     flag = false
