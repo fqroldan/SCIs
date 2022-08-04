@@ -458,6 +458,7 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
+#=
 function discrete_calib!(best_p, dd::DebtMod, maxiter = 200)
     iter = 0
     flag = false
@@ -699,6 +700,7 @@ function discrete_gradient_nested!(best_p, dd::DebtMod, maxiter = 100)
     print("\nOuter iters: $iter")
     update_dd!(dd, best_p)
 end
+=#
 
 function getval(key, pars::Dict)
 
