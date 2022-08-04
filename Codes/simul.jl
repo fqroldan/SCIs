@@ -595,7 +595,7 @@ end
 
 function gradient_nested(dd::DebtMod;
     sρ=0.005,
-    sθ=0.01
+    sθ=0.005
 )
 
     o_pars = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
@@ -605,7 +605,7 @@ function gradient_nested(dd::DebtMod;
     # w, t, m, d = calib_targets(dd)
     # w = (x -> sum(x.^2))([t[2], t[end]] - [m[2], m[end]])
     w, t, m, d = eval_nested!(dd, o_pars, :β, o_pars[:β], n_pars)
-    w = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+    w = (x -> sum(x.^2))([t[1], t[2], t[3]*10, t[end]*25] - [m[1], m[2], m[3]*10, m[end]*25])
     pars_center = Dict(key => val for (key, val) in n_pars)
 
     ρv = o_pars[:β]^-1 - 1
@@ -616,10 +616,10 @@ function gradient_nested(dd::DebtMod;
     β1 = (1 + ρ1)^-1
 
     wβ, t, m, d = eval_nested!(dd, o_pars, :β, β1, n_pars)
-    wβ = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+    wβ = (x -> sum(x.^2))([t[1], t[2], t[3]*10, t[end]*25] - [m[1], m[2], m[3]*10, m[end]*25])
 
     wθ, t, m, d = eval_nested!(dd, o_pars, :θ, θ1, n_pars)
-    wθ = (x -> sum(x.^2))([t[2], t[end]*25] - [m[2], m[end]*25])
+    wθ = (x -> sum(x.^2))([t[1], t[2], t[3]*10, t[end]*25] - [m[1], m[2], m[3]*10, m[end]*25])
 
     vec = [w - wβ, w - wθ]
     vec = vec / norm(vec) * norm([sρ, sθ])
@@ -664,4 +664,89 @@ function discrete_gradient_nested!(best_p, dd::DebtMod, maxiter = 100)
 
     print("\nOuter iters: $iter")
     update_dd!(dd, best_p)
+end
+
+function getval(key, pars::Dict)
+
+    if haskey(pars, key)
+        v = pars[key]
+    elseif key == :ρ
+        v = pars[:β]^-1 - 1
+    elseif key == :λ0
+        v = pars[:d2] + pars[:d1]
+    elseif key == :λ1
+        v = -pars[:d1]
+    end
+
+    return v
+end
+
+function setval!(pars::Dict, key, val)
+
+    if haskey(pars, key)
+        pars[key] = val
+    elseif key == :ρ
+        pars[:β] = (1+val)^-1
+    elseif key == :λ0
+        λ1 = getval(:λ1, pars)
+        pars[:d2] = val + λ1
+    elseif key == :λ1
+        pars[:d1] = -val
+    end
+end
+
+function eval_Sobol(dd::DebtMod, pars, key, val, verbose)
+    update_dd!(dd, pars)
+    setval!(dd.pars, key, val)
+    dd.pars[key] = val
+
+    mpe!(dd, min_iter = 10, tol = 1e-5, verbose = verbose)
+    w, t, m, d = calib_targets(dd)
+end
+
+function iter_Sobol(dd::DebtMod, key, σ)
+    
+    x = getval(key, dd.pars)
+    xvec = range(x-σ, x+σ, length = 5)
+
+    W = Inf
+    xopt = 0.0
+    
+    for (jx, xv) in xvec
+
+        w,t,m,d = eval_Sobol(dd, pars, key, xv, (jx==3))
+
+        if w < W
+            w = W
+            xopt = xv
+        end
+    end
+
+    return xopt, W
+end
+
+
+function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
+    maxiter = 100,
+    σβ = 0.001, σθ = 0.005, σ1 = 0.0025, σ2 = 0.0025)
+    
+    σvec = [σβ, σθ, σ1, σ2]
+    names = [:β, :θ, :d1, :d2]
+    
+    iter = 0
+    while iter < maxiter
+        iter += 1
+
+        js = rand(1:4)
+
+        key = names[js]
+        σ = σvec[js]
+
+        print("Iteration $iter. Moving $key from $(best_p)")
+        xopt, w = iter_Sobol(dd, key, σ)
+
+        best_p[key] = xopt
+
+        update_dd!(dd, best_p)
+    end
 end
