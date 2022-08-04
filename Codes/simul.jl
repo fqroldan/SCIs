@@ -788,7 +788,9 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         print("Best objective: $(@sprintf("%0.3g", 100*w)) at $key = $(@sprintf("%0.3g", xopt)) in [$(@sprintf("%0.3g", xopt-σ)), $(@sprintf("%0.3g", xopt+σ))]. ")
         if w < W
             W = w
-            setval!(best_p, key, xopt)
+            for (key, val) in curr_p
+                best_p[key] = val
+            end
         end        
         print("Best so far: $(@sprintf("%0.3g", 100*W))\n")
         
