@@ -785,7 +785,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(best_p)\n")
         xopt, w = iter_Sobol(dd, key, σ)
         
-        print("Best objective: $(@sprintf("%0.3g", 100*w)). ")
+        print("Best objective: $(@sprintf("%0.3g", 100*w)) at $key = $(@sprintf("%0.3g", x_opt)). ")
         if w < W
             W = w
             setval!(best_p, key, xopt)
