@@ -733,7 +733,7 @@ function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
     mpe!(dd, min_iter = 25, tol = 1e-5, tinyreport = true)
-    w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 5_000)
+    w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
 end
 
 function iter_Sobol(dd::DebtMod, key, σ; Nx = 9)
@@ -764,7 +764,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.01, σθ = 0.01, σ1 = 0.01, σ2 = 0.01)
+    σβ = 0.0025, σθ = 0.05, σ1 = 0.02, σ2 = 0.02)
     
     update_dd!(dd, best_p)
 
@@ -787,7 +787,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(curr_p)\n")
         xopt, jopt, w = iter_Sobol(dd, key, σ)
         
-        print("Best objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", xopt-σ)), $(@sprintf("%0.5g", xopt+σ))]. ")
+        print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", xopt-σ)), $(@sprintf("%0.5g", xopt+σ))]. ")
         
         setval!(curr_p, key, xopt)
         
@@ -796,8 +796,8 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
             for (key, val) in curr_p
                 best_p[key] = val
             end
-        end        
-        print("Best so far: $(@sprintf("%0.3g", 100*W))\n")
+        end
+        print("Best so far $(@sprintf("%0.3g", 100*W))\n")
         
         update_dd!(dd, curr_p)
     end
