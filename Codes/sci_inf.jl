@@ -332,7 +332,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     end
 end
 
-function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, verbose = true)
+function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
 
     new_v = similar(dd.v[:V])
     new_q = similar(dd.q)
@@ -373,8 +373,12 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, verbose = true)
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
     end
-    dist < tol ? print("Converged ") : print("Got ")
-    print("to $(@sprintf("%0.3g", dist)) after $iter iterations.\n")
+    if tinyreport
+        dist < tol ? print("✓ ($iter) ") : print("($(@sprintf("%0.3g", dist)) after $iter) ")
+    else
+        dist < tol ? print("Converged ") : print("Got ")
+        print("to $(@sprintf("%0.3g", dist)) after $iter iterations.\n")
+    end
     return dist < tol
 end
 

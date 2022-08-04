@@ -186,6 +186,39 @@ function PP_targets()
     )
 end
 
+function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
+
+    syms = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
+
+    targets = PP_targets()
+
+    moments = compute_moments(pv)
+    moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+
+    names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
+    maxn = maximum(length(name) for name in names)
+
+    table = "\n"
+    table *= ("$(rpad("", maxn+3, " "))")
+    table *= ("$(rpad("Data", 10, " "))")
+    table *= ("$(rpad("Bench.", 10, " "))")
+    table *= ("$(rpad("Contrib.", 10, " "))")
+    table *= "\n"
+
+    for (jn, nv) in enumerate(names)
+    
+        table *= ("$(rpad(nv, maxn+3, " "))")
+        table *= ("$(rpad(@sprintf("%0.3g", targets[syms[jn]]), 10, " "))")
+        table *= ("$(rpad(@sprintf("%0.3g", moments[syms[jn]]), 10, " "))")
+        contr = 100 * (targets[syms[jn]] / moments[syms[jn]] - 1)^2
+        table *= ("$(rpad(@sprintf("%0.3g", contr), 10, " "))")
+        table *= ("\n")
+    end
+
+    print(table)
+    nothing
+end
+
 function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_RE=[], pv_uncond_RE=[]; savetable=false)
 
     # println(length(pv_RE))
@@ -247,7 +280,7 @@ function simul_table(dd::DebtMod, K = 1_000; kwargs...)
     table_moments(pv, pv_uncond; kwargs...)
 end
 
-function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false))
+function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false), smalltable=false)
     targets = PP_targets()
 
     keys = [:mean_spr,
@@ -270,6 +303,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
+    !showtable && smalltable && table_during(pv, pv_uncond)
 
     names = [:sp, :std, :debt, :def]
     indices= [1, 2, 3, 8]
@@ -695,29 +729,29 @@ function setval!(pars::Dict, key, val)
     end
 end
 
-function eval_Sobol(dd::DebtMod, pars, key, val, verbose)
-    update_dd!(dd, pars)
+function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
-    dd.pars[key] = val
 
-    mpe!(dd, min_iter = 10, tol = 1e-5, verbose = verbose)
-    w, t, m, d = calib_targets(dd)
+    mpe!(dd, min_iter = 25, tol = 1e-5, tinyreport = true)
+    w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 2_000)
 end
 
-function iter_Sobol(dd::DebtMod, key, σ)
+function iter_Sobol(dd::DebtMod, key, σ; Nx = 5)
     
     x = getval(key, dd.pars)
-    xvec = range(x-σ, x+σ, length = 5)
+    xvec = range(x-σ, x+σ, length = Nx)
+    jc = ceil(Int, Nx/2)
 
     W = Inf
     xopt = 0.0
     
-    for (jx, xv) in xvec
+    for (jx, xv) in enumerate(xvec)
 
-        w,t,m,d = eval_Sobol(dd, pars, key, xv, (jx==3))
+        w,t,m,d = eval_Sobol(dd, key, xv, (jx==jc))
+        jx == jc && print("w = $(@sprintf("%0.3g", 100*w))\n")
 
         if w < W
-            w = W
+            W = w
             xopt = xv
         end
     end
@@ -727,26 +761,37 @@ end
 
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
-    maxiter = 100,
-    σβ = 0.001, σθ = 0.005, σ1 = 0.0025, σ2 = 0.0025)
+    maxiter = 500,
+    σβ = 0.001, σθ = 0.005, σ1 = 0.005, σ2 = 0.005)
     
+    update_dd!(dd, best_p)
+
     σvec = [σβ, σθ, σ1, σ2]
     names = [:β, :θ, :d1, :d2]
     
+    curr_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
+    W = Inf
+
     iter = 0
     while iter < maxiter
         iter += 1
 
-        js = rand(1:4)
+        js = iter % 4
+        js == 0 ? js = 4 : nothing
 
         key = names[js]
         σ = σvec[js]
 
-        print("Iteration $iter. Moving $key from $(best_p)")
+        print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(best_p)\n")
         xopt, w = iter_Sobol(dd, key, σ)
-
-        best_p[key] = xopt
-
-        update_dd!(dd, best_p)
+        
+        if w < W
+            W = w
+            setval!(best_p, key, xopt)
+        end        
+        print("Best objective so far: $(@sprintf("%0.3g", 100*W))\n")
+        
+        setval!(curr_p, key, xopt)
+        update_dd!(dd, curr_p)
     end
 end
