@@ -1,11 +1,3 @@
-## TO DO: one long simul to get def.prob, then 1000 simuls of 200+whatever is needed to get 35+4 periods without default followed by a default. ✓
-
-## TO DO: outside of simul, compute q* for an undefaulteable bond for given r in range(0.01, 0.21, length > 400), then use this to interpolate r for the bond in the model to get the spread. ✓
-
-## TO DO: compute std for log(c), log(y), b = B/Y (not 4Y), correlations standard with variables in levels not logs. ✓
-
-## TO DO: sit down with FRoch for the DEP calculations
-
 struct SimulPath
     names::Dict{Symbol,Int64}
     data::Matrix{Float64}
@@ -221,8 +213,6 @@ end
 
 function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_RE=[], pv_uncond_RE=[]; savetable=false)
 
-    # println(length(pv_RE))
-
     syms = [:mean_spr,
     # :mean_sp,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
@@ -289,8 +279,6 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     Random.seed!(25)
     pv_uncond = simulvec(dd, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false)
-
-    # print(ϵmat[2,5])
 
     pv = simulvec(dd, cond_K)
 
