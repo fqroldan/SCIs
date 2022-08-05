@@ -166,10 +166,12 @@ end
 
 function PP_targets()
     targets = Dict{Symbol,Float64}(
-        :mean_spr => 815,
+        # :mean_spr => 815,
+        :mean_spr => 740,
         :mean_sp  => 815,
         :std_spr => 458,
-        :debt_gdp => 25,
+        # :debt_gdp => 25,
+        :debt_gdp => 33,
         :rel_vol => 0.87,
         :corr_yc => 0.97,
         :corr_ytb => -0.77,
@@ -755,7 +757,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.005, σθ = 0.075, σ1 = 0.05, σ2 = 0.05)
+    σβ = 0.002, σθ = 0.05, σ1 = 0.025, σ2 = 0.025)
     
     update_dd!(dd, best_p)
 
