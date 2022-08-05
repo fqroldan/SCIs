@@ -289,6 +289,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     moments_vec = [moments[key] for key in keys]
 
     W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
+    W[2,2] = 2 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
     !showtable && smalltable && table_during(pv, pv_uncond)
@@ -726,7 +727,7 @@ function eval_Sobol(dd::DebtMod, key, val, verbose)
     w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
 end
 
-function iter_Sobol(dd::DebtMod, key, σ; Nx = 9)
+function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
     
     x = getval(key, dd.pars)
     xvec = range(x-σ, x+σ, length = Nx)
@@ -754,7 +755,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.0025, σθ = 0.05, σ1 = 0.02, σ2 = 0.02)
+    σβ = 0.005, σθ = 0.075, σ1 = 0.05, σ2 = 0.05)
     
     update_dd!(dd, best_p)
 
