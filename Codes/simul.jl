@@ -726,7 +726,7 @@ end
 function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, tol = 1e-5, tinyreport = true)
+    mpe!(dd, min_iter = 25, tol = 5e-6, tinyreport = true)
     w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
 end
 
