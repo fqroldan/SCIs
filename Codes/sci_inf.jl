@@ -118,9 +118,8 @@ function budget_constraint(bpv, bv, yv, q, dd::DebtMod)
     cv = yv + q * (bpv - (1 - ρ) * bv) - coupon * bv
     return cv
 end
-function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
-    """ Evalúa la función de valor en (b,y) para una elección de b' """
-    β = dd.pars[:β]
+
+function BC(bpv, jb, jy, itp_q, dd::DebtMod)
     bv, yv = dd.gr[:b][jb], dd.gr[:y][jy]
 
     # Interpola el precio de la deuda para el nivel elegido
@@ -128,6 +127,13 @@ function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
 
     # Deduce consumo del estado, la elección de deuda nueva y el precio de la deuda nueva
     cv = budget_constraint(bpv, bv, yv, qv, dd)
+end
+
+function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
+    """ Evalúa la función de valor en (b,y) para una elección de b' """
+    β = dd.pars[:β]
+    
+    cv = BC(bpv, jb, jy, itp_q, dd)
 
     # Evalúa la función de utilidad en c
     ut = u(cv, dd)
@@ -145,20 +151,52 @@ function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
     return v, cv
 end
 
+function max_adj(jb, jy, itp_q, dd::DebtMod)
+    bmin, bmax = extrema(dd.gr[:b])
+
+    objf(bpv) = BC(bpv, jb, jy, itp_q, dd)
+
+    if objf(bmin) < 0
+        res = Optim.optimize(x -> objf(x)^2, bmin, bmax, GoldenSection())
+        bmin = res.minimizer
+    end
+    return bmin
+end
+
+function borrowing_limit(bmin, jy, itp_q, dd::DebtMod)
+    yv = dd.gr[:y][jy]
+    bmax = maximum(dd.gr[:b])
+
+    min_q = 0.1
+
+    objf(bpv) = (itp_q(bpv, yv) - min_q)^2
+
+    if objf(bmax) < min_q
+        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
+        bmax = res.minimizer
+    end
+    return bmax
+end
+
+
 function opt_value(jb, jy, itp_q, itp_v, dd::DebtMod)
     """ Elige b' en (b,y) para maximizar la función de valor """
 
     # b' ∈ bgrid
-    b_min, b_max = extrema(dd.gr[:b])
+    bmin = max_adj(jb, jy, itp_q, dd)
+    bmax = borrowing_limit(bmin, jy, itp_q, dd)
 
     # Función objetivo en términos de b', dada vuelta 
     obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_v, dd)[1]
 
-    # Resuelve el máximo
-    res = Optim.optimize(obj_f, b_min, b_max, GoldenSection())
-
-    # Extrae el argmax
-    b_star = res.minimizer
+    if bmax - bmin < 1e-4
+        b_star = bmin
+    else
+        # Resuelve el máximo
+        res = Optim.optimize(obj_f, bmin, bmax, GoldenSection())
+        # Extrae el argmax
+        b_star = res.minimizer
+    end
 
     # Extrae v y c consistentes con b'
     vp, c_star = eval_value(jb, jy, b_star, itp_q, itp_v, dd)
