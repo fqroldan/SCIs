@@ -152,8 +152,8 @@ function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
     return v, cv
 end
 
-function max_adj(jb, jy, itp_q, dd::DebtMod)
-    bmin, bmax = extrema(dd.gr[:b])
+function max_adj(jb, jy, bmax, itp_q, dd::DebtMod)
+    bmin = minimum(dd.gr[:b])
 
     objf(bpv) = BC(bpv, jb, jy, itp_q, dd)
 
@@ -164,15 +164,16 @@ function max_adj(jb, jy, itp_q, dd::DebtMod)
     return bmin
 end
 
-function borrowing_limit(bmin, jy, itp_q, dd::DebtMod)
+function borrowing_limit(jy, itp_q, dd::DebtMod)
     yv = dd.gr[:y][jy]
-    bmax = maximum(dd.gr[:b])
+    
+    bmin, bmax = extrema(dd.gr[:b])
 
     min_q = dd.pars[:min_q]
 
     objf(bpv) = (itp_q(bpv, yv) - min_q)^2
 
-    if itp_q(bpv, yv) < min_q
+    if itp_q(bmax, yv) < min_q
         res = Optim.optimize(objf, bmin, bmax, GoldenSection())
         bmax = res.minimizer
     end
@@ -180,12 +181,11 @@ function borrowing_limit(bmin, jy, itp_q, dd::DebtMod)
 end
 
 
-function opt_value(jb, jy, itp_q, itp_v, dd::DebtMod)
+function opt_value(jb, jy, bmax, itp_q, itp_v, dd::DebtMod)
     """ Elige b' en (b,y) para maximizar la función de valor """
 
     # b' ∈ bgrid
-    bmin = max_adj(jb, jy, itp_q, dd)
-    bmax = borrowing_limit(bmin, jy, itp_q, dd)
+    bmin = max_adj(jb, jy, bmax, itp_q, dd)
 
     # Función objetivo en términos de b', dada vuelta 
     obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_v, dd)[1]
@@ -232,11 +232,13 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
     knots = (dd.gr[:b], dd.gr[:y])
     itp_v = interpolate(knots, dd.v[:V], Gridded(Linear()))
 
-    Threads.@threads for jb in eachindex(dd.gr[:b])
-        for jy in eachindex(dd.gr[:y])
+    Threads.@threads for jy in eachindex(dd.gr[:y])
 
+        bmax = borrowing_limit(jy, itp_q, dd)
+        for jb in eachindex(dd.gr[:b])
+        
             # En repago
-            vp, c_star, b_star = opt_value(jb, jy, itp_q, itp_v, dd)
+            vp, c_star, b_star = opt_value(jb, jy, bmax, itp_q, itp_v, dd)
 
             # Guarda los valores para repago 
             dd.v[:R][jb, jy] = vp
@@ -316,6 +318,7 @@ function value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd::DebtMod; rep
         x[js] = -θ * itp_vL(bpv, ypv, jζp)
     end
 
+    # log ∑_i prob_i exp(-θ v^L_i)
     Tv = logsumexp_onepass(x, w) / -θ
     vL = cL + βL * Tv
 
