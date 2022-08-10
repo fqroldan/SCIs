@@ -193,6 +193,8 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
+    freq_q = 100*mean(mean(p[:q] .<= 0.41) for p in pv)
+
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
     table *= ("$(rpad("Data", 10, " "))")
@@ -209,6 +211,8 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
         table *= ("$(rpad(@sprintf("%0.3g", contr), 10, " "))")
         table *= ("\n")
     end
+
+    table *= "Freq. at min_q = $(@sprintf("%0.3g", freq_q))%\n"
 
     print(table)
     nothing
@@ -726,8 +730,10 @@ end
 function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, tol = 5e-6, tinyreport = true)
+    mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
     w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
+    verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
+    w
 end
 
 function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
@@ -742,7 +748,7 @@ function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
     
     for (jx, xv) in enumerate(xvec)
 
-        w,t,m,d = eval_Sobol(dd, key, xv, (jx==jc))
+        w = eval_Sobol(dd, key, xv, (jx==jc))
         jx == jc && print("w = $(@sprintf("%0.3g", 100*w))\n")
 
         if w < W
@@ -752,18 +758,19 @@ function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
         end
     end
 
-    return xopt, jopt, W
+    return xopt, jopt, W, x
 end
 
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.002, σθ = 0.05, σ1 = 0.01, σ2 = 0.01)
+    σβ = 0.001, σθ = 0.05, σ1 = 0.002, σ2 = 0.004)
     
     update_dd!(dd, best_p)
 
     σvec = [σβ, σθ, σ1, σ2]
     names = [:β, :θ, :d1, :d2]
+    Nxs = [5,5,5,5]
     
     curr_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
     W = Inf
@@ -778,10 +785,12 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         key = names[js]
         σ = σvec[js]
 
+        Nx = Nxs[js]
+
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(curr_p)\n")
-        xopt, jopt, w = iter_Sobol(dd, key, σ)
+        xopt, jopt, w, x_og = iter_Sobol(dd, key, σ, Nx=Nx)
         
-        print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", xopt-σ)), $(@sprintf("%0.5g", xopt+σ))]. ")
+        print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
         
         setval!(curr_p, key, xopt)
         
