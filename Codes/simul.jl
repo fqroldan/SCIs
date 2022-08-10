@@ -181,7 +181,7 @@ function PP_targets()
     )
 end
 
-function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
+function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q)
 
     syms = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
 
@@ -193,7 +193,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
-    freq_q = 100*mean(mean(p[:q] .<= 0.36) for p in pv)
+    freq_q = 100*mean(mean(p[:q] .<= min_q + 0.01) for p in pv)
 
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
@@ -278,6 +278,8 @@ function simul_table(dd::DebtMod, K = 1_000; kwargs...)
 end
 
 function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false), smalltable=false)
+    min_q = dd.pars[:min_q]
+    
     targets = PP_targets()
 
     keys = [:mean_spr,
@@ -299,7 +301,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     W[2,2] = 2 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
-    !showtable && smalltable && table_during(pv, pv_uncond)
+    !showtable && smalltable && table_during(pv, pv_uncond, min_q)
 
     names = [:sp, :std, :debt, :def]
     indices= [1, 2, 3, 8]

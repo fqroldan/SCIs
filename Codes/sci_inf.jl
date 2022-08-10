@@ -167,7 +167,7 @@ function borrowing_limit(bmin, jy, itp_q, dd::DebtMod)
     yv = dd.gr[:y][jy]
     bmax = maximum(dd.gr[:b])
 
-    min_q = 0.35
+    min_q = dd.pars[:min_q]
 
     objf(bpv) = (itp_q(bpv, yv) - min_q)^2
 
