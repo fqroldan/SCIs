@@ -193,7 +193,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
-    freq_q = 100*mean(mean(p[:q] .<= 0.31) for p in pv)
+    freq_q = 100*mean(mean(p[:q] .<= 0.36) for p in pv)
 
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")

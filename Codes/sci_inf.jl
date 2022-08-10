@@ -35,7 +35,7 @@ function Default(;
     d1 = -0.255,
     d2 = 0.296,
     ρy=0.9484,
-    σy=0.019,
+    σy=0.02,
     # σy = 0.026,
     Nb=200,
     Ny=21,
@@ -167,11 +167,11 @@ function borrowing_limit(bmin, jy, itp_q, dd::DebtMod)
     yv = dd.gr[:y][jy]
     bmax = maximum(dd.gr[:b])
 
-    min_q = 0.3
+    min_q = 0.35
 
     objf(bpv) = (itp_q(bpv, yv) - min_q)^2
 
-    if objf(bmax) < min_q
+    if itp_q(bpv, yv) < min_q
         res = Optim.optimize(objf, bmin, bmax, GoldenSection())
         bmax = res.minimizer
     end
