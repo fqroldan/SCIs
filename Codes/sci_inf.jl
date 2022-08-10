@@ -42,6 +42,7 @@ function Default(;
     bmax=1.5,
     std_devs = 3,
     κ = r+ρ,
+    min_q = 0.35,
 )
 
     # d1 = 1-Δ
@@ -50,7 +51,7 @@ function Default(;
     βL = 1/(1+r)
     wL = 1
 
-    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL)
+    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL, :min_q => min_q)
 
     ychain = tauchen(Ny, ρy, σy, 0, std_devs)
 
