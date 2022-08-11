@@ -338,7 +338,6 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
-#=
 function calibrate(dd::DebtMod, targets = PP_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
@@ -375,9 +374,10 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     xmax = [maxβ, maxd1, maxd2, maxθ]
     xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
 
-    res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
+    res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(SimulatedAnnealing()))
 end
 
+#=
 function calib_sphere_ρ(dd::DebtMod;
     ρv, sρ=0.01, kwargs...)
 
