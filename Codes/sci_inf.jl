@@ -81,6 +81,21 @@ function logsumexp(a::AbstractVector{<:Real})
     return m + log.(sum(exp.(a .- m)))
 end
 
+N(dd::DebtMod, sym::Symbol) = length(dd.gr[sym])
+
+function make_itp(dd::DebtMod, y::Array{<:Number, 2})
+    knots = (dd.gr[:b], 1:N(dd, :y))
+
+    interpolate(knots, y, (Gridded(Linear()), NoInterp()))
+end
+
+function make_itp(dd::DebtMod, y::Array{<:Number, 3})
+    knots = (dd.gr[:b], 1:N(dd, :y), 1:2)
+
+    interpolate(knots, y, (Gridded(Linear()), NoInterp(), NoInterp()))
+end
+
+
 u(cv, dd::DebtMod) = u(cv, dd.pars[:γ])
 function u(cv, γ)
     cmin = 1e-5
@@ -124,7 +139,7 @@ function BC(bpv, jb, jy, itp_q, dd::DebtMod)
     bv, yv = dd.gr[:b][jb], dd.gr[:y][jy]
 
     # Interpola el precio de la deuda para el nivel elegido
-    qv = itp_q(bpv, yv)
+    qv = itp_q(bpv, jy)
 
     # Deduce consumo del estado, la elección de deuda nueva y el precio de la deuda nueva
     cv = budget_constraint(bpv, bv, yv, qv, dd)
@@ -141,9 +156,9 @@ function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
 
     # Calcula el valor esperado de la función de valor interpolando en b'
     Ev = 0.0
-    for (jyp, ypv) in enumerate(dd.gr[:y])
+    for jyp in eachindex(dd.gr[:y])
         prob = dd.P[:y][jy, jyp]
-        Ev += prob * itp_v(bpv, ypv)
+        Ev += prob * itp_v(bpv, jyp)
     end
 
     # v es el flujo de hoy más el valor de continuación esperado descontado
@@ -165,15 +180,15 @@ function max_adj(jb, jy, bmax, itp_q, dd::DebtMod)
 end
 
 function borrowing_limit(jy, itp_q, dd::DebtMod)
-    yv = dd.gr[:y][jy]
+    # yv = dd.gr[:y][jy]
     
     bmin, bmax = extrema(dd.gr[:b])
 
     min_q = dd.pars[:min_q]
 
-    objf(bpv) = (itp_q(bpv, yv) - min_q)^2
+    objf(bpv) = (itp_q(bpv, jy) - min_q)^2
 
-    if itp_q(bmax, yv) < min_q
+    if itp_q(bmax, jy) < min_q
         res = Optim.optimize(objf, bmin, bmax, GoldenSection())
         bmax = res.minimizer
     end
@@ -229,8 +244,8 @@ end
 
 function vfi_iter!(new_v, itp_q, dd::DebtMod)
     # Reconstruye la interpolación de la función de valor
-    knots = (dd.gr[:b], dd.gr[:y])
-    itp_v = interpolate(knots, dd.v[:V], Gridded(Linear()))
+    knots = (dd.gr[:b], 1:length(dd.gr[:y]))
+    itp_v = make_itp(dd, dd.v[:V]); #interpolate(knots, dd.v[:V], (Gridded(Linear()), NoInterp()));
 
     Threads.@threads for jy in eachindex(dd.gr[:y])
 
@@ -253,14 +268,17 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
     end
 
     χ, ℏ = (dd.pars[sym] for sym in (:χ, :ℏ))
-    itp_vD = interpolate(knots, dd.v[:D], Gridded(Linear()))
-    for (jb, bv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
+    itp_vD = make_itp(dd, dd.v[:D]); # interpolate(knots, dd.v[:D], (Gridded(Linear()), NoInterp()))
+    Vs = zeros(2)
+    for (jb, bv) in enumerate(dd.gr[:b]), jy in eachindex(dd.gr[:y])
         # Valor de repagar y defaultear llegando a (b,y)
         vr = dd.v[:R][jb, jy]
-        vd = itp_vD((1 - ℏ) * bv, yv)
+        vd = itp_vD((1 - ℏ) * bv, jy)
+
+        Vs .= (vd, vr)
 
         ## Modo 2: valor extremo tipo X evitando comparar exponenciales de cosas grandes
-        lse = logsumexp([vd / χ, vr / χ])
+        lse = logsumexp(Vs ./ χ)
         lpr = vd / χ - lse
         pr = exp(lpr)
         V = χ * lse
@@ -288,13 +306,14 @@ function logsumexp_onepass(X, w)
     return a + log(r)
 end
 
-function value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd::DebtMod; rep)
+function value_lenders(bv, bpv, jy, py, itp_q, itp_def, itp_vL, dd::DebtMod, gr, x, w; rep)
     θ, wL, βL, ρ, ψ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ))
     
+    yv = dd.gr[:y][jy]
     cL = wL
     if rep
         coupon = coupon_rate(yv, dd)
-        cL += coupon * bv - itp_q(bpv, yv) * (bpv - (1 - ρ) * bv)
+        cL += coupon * bv - itp_q(bpv, jy) * (bpv - (1 - ρ) * bv)
     end
 
     if !rep
@@ -302,20 +321,16 @@ function value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd::DebtMod; rep
     end
 
     # Ev = 0.0
-    gr = gridmake(1:length(dd.gr[:y]), 1:2)
-
-    w = zeros(size(gr,1))
-    x = zeros(size(gr,1))
     for js in axes(gr, 1)
         jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
-        ypv = dd.gr[:y][jyp]
+        # ypv = dd.gr[:y][jyp]
 
-        p_def = ifelse(rep, itp_def(bpv, ypv), 1-ψ)
+        p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
         prob = py[jyp]
         
         w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
 
-        x[js] = -θ * itp_vL(bpv, ypv, jζp)
+        x[js] = -θ * itp_vL(bpv, jyp, jζp)
     end
 
     # log ∑_i prob_i exp(-θ v^L_i)
@@ -326,20 +341,35 @@ function value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd::DebtMod; rep
 end
 
 function v_lender_iter!(dd::Default)
-    knots = (dd.gr[:b], dd.gr[:y])
-    itp_q = interpolate(knots, dd.q, Gridded(Linear()));
-    itp_def = interpolate(knots, dd.v[:prob], Gridded(Linear()));
+    # knots = (dd.gr[:b], 1:length(dd.gr[:y]))
+    itp_q = make_itp(dd, dd.q); #interpolate(knots, dd.q, (Gridded(Linear()), NoInterp()));
+    itp_def = make_itp(dd, dd.v[:prob]); # interpolate(knots, dd.v[:prob], (Gridded(Linear()), NoInterp()));
 
-    knots = (dd.gr[:b], dd.gr[:y], 1:2)
-    itp_vL = interpolate(knots, dd.vL, Gridded(Linear()));
+    # knots_long = (dd.gr[:b], 1:length(dd.gr[:y]), 1:2)
+    itp_vL = make_itp(dd, dd.vL); # interpolate(knots_long, dd.vL, (Gridded(Linear()), NoInterp(), NoInterp()));
 
-    for (jb, bv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
-        py = dd.P[:y][jy, :]
+    if dd.pars[:θ] > 0
+        Threads.@threads for jy in eachindex(dd.gr[:y])
+            # yv = dd.gr[:y][jy]
 
-        bpv = dd.gb[jb, jy]
-        dd.vL[jb, jy, 1] = value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd, rep=true)
-        dd.vL[jb, jy, 2] = value_lenders(bv, bpv, yv, py, itp_q, itp_def, itp_vL, dd, rep=false)
+            py = dd.P[:y][jy, :]
+
+            gr = gridmake(1:length(dd.gr[:y]), 1:2)
+
+            w = zeros(size(gr,1))
+            x = zeros(size(gr,1))
+
+            for (jb, bv) in enumerate(dd.gr[:b])
+
+                bpv = dd.gb[jb, jy]
+                dd.vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=true)
+                dd.vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=false)
+            end
+        end
+    else
+        dd.vL[:] .= 1
     end
+    nothing
 end
 
 function q_iter!(new_q, new_qd, dd::Default)
@@ -347,9 +377,9 @@ function q_iter!(new_q, new_qd, dd::Default)
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
     # Interpola el precio de la deuda (para mañana)
-    knots = (dd.gr[:b], dd.gr[:y])
-    itp_qd = interpolate(knots, dd.qD, Gridded(Linear()));
-    itp_q = interpolate(knots, dd.q, Gridded(Linear()));
+    # knots = (dd.gr[:b], dd.gr[:y])
+    itp_qd = make_itp(dd, dd.qD); # interpolate(knots, dd.qD, Gridded(Linear()));
+    itp_q = make_itp(dd, dd.q); #interpolate(knots, dd.q, Gridded(Linear()));
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
         Eq = 0.0
@@ -363,15 +393,15 @@ function q_iter!(new_q, new_qd, dd::Default)
                 sdf_R = exp(-θ * dd.vL[jbp, jyp, 1])
                 sdf_D = exp(-θ * dd.vL[jbp, jyp, 2])
             else
-                sdf_R = 1
-                sdf_D = 1
+                sdf_R = 1.
+                sdf_D = 1.
             end
         
             coupon = coupon_rate(ypv, dd)
         
             # Si el país tiene acceso a mercados, emite y puede hacer default mañana
             bpp = dd.gb[jbp, jyp]
-            rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, ypv)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, ypv)
+            rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
         
             # Si el país está en default, mañana puede recuperar acceso a mercados
             rep_D = ψ * rep_R + (1 - ψ) * sdf_D * dd.qD[jbp, jyp]
@@ -390,14 +420,14 @@ end
 
 function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
 
-    new_v = similar(dd.v[:V])
-    new_q = similar(dd.q)
-    new_qd = similar(dd.qD)
+    new_v = similar(dd.v[:V]);
+    new_q = similar(dd.q);
+    new_qd = similar(dd.qD);
 
     dist = 1 + tol
     iter = 0
 
-    knots = (dd.gr[:b], dd.gr[:y])
+    # knots = (dd.gr[:b], 1:length(dd.gr[:y]))
 
     while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
@@ -412,7 +442,7 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
         dist_q = max(dist_qD, dist_qR)
 
         # Interpolación del precio de la deuda
-        itp_q = interpolate(knots, new_q, Gridded(Linear()))
+        itp_q = make_itp(dd, new_q); # interpolate(knots, new_q, Gridded(Linear()));
 
         # Actualiza la función de valor
         vfi_iter!(new_v, itp_q, dd)
