@@ -745,8 +745,8 @@ function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
     jc = ceil(Int, Nx/2)
 
     W = Inf
-    xopt = 0.0
-    jopt = 0
+    xopt = x
+    jopt = jc
     
     for (jx, xv) in enumerate(xvec)
 
@@ -766,7 +766,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.001, σθ = 0.05, σ1 = 0.002, σ2 = 0.004)
+    σβ = 0.001, σθ = 0.025, σ1 = 0.001, σ2 = 0.001)
     
     update_dd!(dd, best_p)
 
@@ -785,7 +785,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         js == 0 ? js = 4 : nothing
 
         key = names[js]
-        σ = σvec[js]
+        σ = σvec[js]/2
 
         Nx = Nxs[js]
 
