@@ -363,10 +363,10 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", β)), $(@sprintf("%0.3g", d1)), $(@sprintf("%0.3g", d2)), $(@sprintf("%0.3g", θ))): ")
 
-        mpe!(dd, min_iter = 10, verbose=false)
+        mpe!(dd, min_iter = 10, tinyreport = true)
 
         w, t, m, d = calib_targets(dd)
-        print("v = $(@sprintf("0.3g", 100*w))\n")
+        print("v = $(@sprintf("%0.3g", 100*w))\n")
         return w
     end
 
