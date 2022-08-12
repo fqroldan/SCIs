@@ -286,8 +286,6 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     # :mean_sp,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
-    keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
-
     Random.seed!(25)
     pv_uncond = simulvec(dd, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false)
 
@@ -298,6 +296,9 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     targets_vec = [targets[key] for key in keys]
     moments_vec = [moments[key] for key in keys]
+
+    targets_vec = targets_vec[[1,2,3,8]]
+    moments_vec = moments_vec[[1,2,3,8]]
 
     W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
     W[2,2] = 2 # More weight on std dev of spread
