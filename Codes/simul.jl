@@ -300,7 +300,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     targets_vec = targets_vec[[1,2,3,8]]
     moments_vec = moments_vec[[1,2,3,8]]
 
-    W = diagm([ifelse(key in [:mean_spr, :std_spr, :debt_gdp, :def_prob], 1.0, 0.0) for key in keys])
+    W = diagm(ones(4))
     W[2,2] = 2 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
