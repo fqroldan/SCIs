@@ -342,11 +342,11 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
     mind2 = 0.2,
-    minθ = 0.5,
+    minθ = 0.1,
     maxβ = 1/(1+0.015),
     maxd1 = -0.01,
     maxd2 = 0.4,
-    maxθ = 3,
+    maxθ = 2,
 )
     keys = [:mean_spr, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
