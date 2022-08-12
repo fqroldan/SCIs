@@ -286,6 +286,8 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     # :mean_sp,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
+    keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
+
     Random.seed!(25)
     pv_uncond = simulvec(dd, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false)
 
@@ -303,12 +305,12 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
     !showtable && smalltable && table_during(pv, pv_uncond, min_q)
 
-    names = [:sp, :std, :debt, :def]
-    indices= [1, 2, 3, 8]
-    dict = Dict(name => targets_vec[indices[jj]]-moments_vec[indices[jj]] for (jj, name) in enumerate(names))
+    # names = [:sp, :std, :debt, :def]
+    # indices= [1, 2, 3, 8]
+    # dict = Dict(name => targets_vec[indices[jj]]-moments_vec[indices[jj]] for (jj, name) in enumerate(names))
 
     objective = (targets_vec ./ moments_vec .- 1)' * W * (targets_vec ./ moments_vec .- 1)
-    objective, targets_vec, moments_vec, dict
+    objective, targets_vec, moments_vec#, dict
 end
 
 function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
@@ -365,7 +367,7 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
         mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
 
-        w, t, m, d = calib_targets(dd, smalltable=false, cond_K = 7_500, uncond_K = 10_000)
+        w, t, m = calib_targets(dd, smalltable=false, cond_K = 7_500, uncond_K = 10_000)
         print("v = $(@sprintf("%0.3g", 100*w))\n")
         return w
     end
@@ -734,7 +736,7 @@ function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
     mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
-    w, t, m, d = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
+    w, t, m = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
     verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
     w
 end
