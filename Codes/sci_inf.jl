@@ -340,7 +340,7 @@ function v_lender_iter!(dd::Default)
 
     itp_vL = make_itp(dd, dd.vL);
 
-    if dd.pars[:θ] > 0
+    if dd.pars[:θ] > 1e-3
         Threads.@threads for jy in eachindex(dd.gr[:y])
             yv = dd.gr[:y][jy]
             coupon = coupon_rate(yv, dd)
@@ -381,7 +381,7 @@ function q_iter!(new_q, new_qd, dd::Default)
         for (jyp, ypv) in enumerate(dd.gr[:y])
             prob_def = dd.v[:prob][jbp, jyp]
         
-            if θ > 1e-2
+            if θ > 1e-3
                 sdf_R = exp(-θ * dd.vL[jbp, jyp, 1])
                 sdf_D = exp(-θ * dd.vL[jbp, jyp, 2])
             else
