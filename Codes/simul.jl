@@ -374,7 +374,8 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     xmax = [maxβ, maxd1, maxd2, maxθ]
     xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
 
-    res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(ParticleSwarm()))
+    res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
+    # res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax))
 end
 
 #=
