@@ -294,7 +294,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     pv = simulvec(dd, cond_K);
 
     moments = compute_moments(pv)
-    moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+    moments[:def_prob] = mean(sum(pp[:def]) / max(sum(pp[:ζ].==1) / 4,0.25) * 100 for pp in pv_uncond)
 
     targets_vec = [targets[key] for key in keys]
     moments_vec = [moments[key] for key in keys]
@@ -309,7 +309,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     # indices= [1, 2, 3, 8]
     # dict = Dict(name => targets_vec[indices[jj]]-moments_vec[indices[jj]] for (jj, name) in enumerate(names))
 
-    objective = (targets_vec ./ moments_vec .- 1)' * W * (targets_vec ./ moments_vec .- 1)
+    objective = (moments_vec ./ targets_vec .- 1)' * W * (moments_vec ./ targets_vec .- 1)
     objective, targets_vec, moments_vec#, dict
 end
 
