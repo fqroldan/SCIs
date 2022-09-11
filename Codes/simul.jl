@@ -377,8 +377,11 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
 
     # res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
-    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax))
+    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles = 25))
 end
+
+# Trying with (β, d1, d2, θ) = (0.942, -0.216, 0.267, 0.609): ✓ (464) v = 18.9
+# Trying with (β, d1, d2, θ) = (0.946, -0.206, 0.255, 0.669): ✓ (461) v = 17.4
 
 #=
 function calib_sphere_ρ(dd::DebtMod;
