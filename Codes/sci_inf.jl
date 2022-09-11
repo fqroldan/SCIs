@@ -145,7 +145,7 @@ function BC(bpv, jb, jy, itp_q, dd::DebtMod)
     cv = budget_constraint(bpv, bv, yv, qv, dd)
 end
 
-function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
+function eval_value(jb, jy, bpv, itp_q, itp_Ev, dd::DebtMod)
     """ Evalúa la función de valor en (b,y) para una elección de b' """
     β = dd.pars[:β]
     
@@ -154,12 +154,13 @@ function eval_value(jb, jy, bpv, itp_q, itp_v, dd::DebtMod)
     # Evalúa la función de utilidad en c
     ut = u(cv, dd)
 
-    # Calcula el valor esperado de la función de valor interpolando en b'
-    Ev = 0.0
-    for jyp in eachindex(dd.gr[:y])
-        prob = dd.P[:y][jy, jyp]
-        Ev += prob * itp_v(bpv, jyp)
-    end
+    # # Calcula el valor esperado de la función de valor interpolando en b'
+    # Ev = 0.0
+    # for jyp in eachindex(dd.gr[:y])
+    #     prob = dd.P[:y][jy, jyp]
+    #     Ev += prob * itp_Ev(bpv, jyp)
+    # end
+    Ev = itp_Ev(bpv, jy)
 
     # v es el flujo de hoy más el valor de continuación esperado descontado
     v = ut + β * Ev
@@ -194,14 +195,14 @@ function borrowing_limit(jy, itp_q, dd::DebtMod)
 end
 
 
-function opt_value(jb, jy, bmax, itp_q, itp_v, dd::DebtMod)
+function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     """ Elige b' en (b,y) para maximizar la función de valor """
 
     # b' ∈ bgrid
     bmin = max_adj(jb, jy, bmax, itp_q, dd)
 
     # Función objetivo en términos de b', dada vuelta 
-    obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_v, dd)[1]
+    obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_Ev, dd)[1]
 
     if bmax - bmin < 1e-4
         b_star = bmin
@@ -213,7 +214,7 @@ function opt_value(jb, jy, bmax, itp_q, itp_v, dd::DebtMod)
     end
 
     # Extrae v y c consistentes con b'
-    vp, c_star = eval_value(jb, jy, b_star, itp_q, itp_v, dd)
+    vp, c_star = eval_value(jb, jy, b_star, itp_q, itp_Ev, dd)
 
     return vp, c_star, b_star
 end
@@ -240,9 +241,25 @@ function value_default(jb, jy, dd::DebtMod)
     return c, v
 end
 
+function make_itp_vp(dd::DebtMod)
+    Ev = similar(dd.v[:V])
+    for jy in eachindex(dd.gr[:y]), jbp in eachindex(dd.gr[:b])
+        Evc = 0.0
+        for jyp in eachindex(dd.gr[:y])
+            prob = dd.P[:y][jy,jyp]
+
+            Evc += prob * dd.v[:V][jbp, jyp]
+        end
+        Ev[jbp, jy] = Evc
+    end
+
+    itp_Ev = make_itp(dd, Ev)
+end
+
 function vfi_iter!(new_v, itp_q, dd::DebtMod)
-    # Reconstruye la interpolación de la función de valor
-    itp_v = make_itp(dd, dd.v[:V]); 
+    # Reconstruye la interpolación de la función de valor esperada
+    # itp_v = make_itp(dd, dd.v[:V]);
+    itp_Ev = make_itp_vp(dd);
 
     Threads.@threads for jy in eachindex(dd.gr[:y])
 
@@ -250,7 +267,7 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
         for jb in eachindex(dd.gr[:b])
         
             # En repago
-            vp, c_star, b_star = opt_value(jb, jy, bmax, itp_q, itp_v, dd)
+            vp, c_star, b_star = opt_value(jb, jy, bmax, itp_q, itp_Ev, dd)
 
             # Guarda los valores para repago 
             dd.v[:R][jb, jy] = vp
