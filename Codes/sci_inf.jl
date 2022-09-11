@@ -160,7 +160,7 @@ function eval_value(jb, jy, bpv, itp_q, itp_Ev, dd::DebtMod)
     #     prob = dd.P[:y][jy, jyp]
     #     Ev += prob * itp_Ev(bpv, jyp)
     # end
-    Ev = itp_Ev(bpv, jy)
+    Ev = itp_Ev(bpv)
 
     # v es el flujo de hoy más el valor de continuación esperado descontado
     v = ut + β * Ev
@@ -241,30 +241,28 @@ function value_default(jb, jy, dd::DebtMod)
     return c, v
 end
 
-function make_itp_vp(dd::DebtMod)
-    Ev = similar(dd.v[:V])
-    Threads.@threads for jy in eachindex(dd.gr[:y])
-        for jbp in eachindex(dd.gr[:b])
-            Evc = 0.0
-            for jyp in eachindex(dd.gr[:y])
-                prob = dd.P[:y][jy,jyp]
+function make_itp_vp(dd::DebtMod, jy)
+    Ev = similar(dd.gr[:b])
+    for jbp in eachindex(dd.gr[:b])
+        Evc = 0.0
+        for jyp in eachindex(dd.gr[:y])
+            prob = dd.P[:y][jy,jyp]
 
-                Evc += prob * dd.v[:V][jbp, jyp]
-            end
-            Ev[jbp, jy] = Evc
+            Evc += prob * dd.v[:V][jbp, jyp]
         end
+        Ev[jbp] = Evc
     end
 
-    itp_Ev = make_itp(dd, Ev)
+    interpolate!((dd.gr[:b],), Ev, Gridded(Linear()))
 end
 
 function vfi_iter!(new_v, itp_q, dd::DebtMod)
     # Reconstruye la interpolación de la función de valor esperada
     # itp_v = make_itp(dd, dd.v[:V]);
-    itp_Ev = make_itp_vp(dd);
-
+    
     Threads.@threads for jy in eachindex(dd.gr[:y])
-
+        itp_Ev = make_itp_vp(dd, jy);
+        
         bmax = borrowing_limit(jy, itp_q, dd)
         for jb in eachindex(dd.gr[:b])
         
