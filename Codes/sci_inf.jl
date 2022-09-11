@@ -243,14 +243,16 @@ end
 
 function make_itp_vp(dd::DebtMod)
     Ev = similar(dd.v[:V])
-    for jy in eachindex(dd.gr[:y]), jbp in eachindex(dd.gr[:b])
-        Evc = 0.0
-        for jyp in eachindex(dd.gr[:y])
-            prob = dd.P[:y][jy,jyp]
+    Threads.@threads for jy in eachindex(dd.gr[:y])
+        for jbp in eachindex(dd.gr[:b])
+            Evc = 0.0
+            for jyp in eachindex(dd.gr[:y])
+                prob = dd.P[:y][jy,jyp]
 
-            Evc += prob * dd.v[:V][jbp, jyp]
+                Evc += prob * dd.v[:V][jbp, jyp]
+            end
+            Ev[jbp, jy] = Evc
         end
-        Ev[jbp, jy] = Evc
     end
 
     itp_Ev = make_itp(dd, Ev)
