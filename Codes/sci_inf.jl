@@ -253,7 +253,7 @@ function make_itp_vp(dd::DebtMod, jy)
         Ev[jbp] = Evc
     end
 
-    interpolate!((dd.gr[:b],), Ev, Gridded(Linear()))
+    interpolate((dd.gr[:b],), Ev, Gridded(Linear()))
 end
 
 function vfi_iter!(new_v, itp_q, dd::DebtMod)
