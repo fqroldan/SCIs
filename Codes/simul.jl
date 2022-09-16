@@ -379,7 +379,7 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
     # res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead())) # se traba en mínimos locales
     # Simulated Annealing no tiene Fminbox 
-    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles = 25))
+    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles = 10))
 end
 
 # Trying with (β, d1, d2, θ) = (0.942, -0.216, 0.267, 0.609): ✓ (464) v = 18.9
