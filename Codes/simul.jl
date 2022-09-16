@@ -166,18 +166,19 @@ end
 
 function PP_targets()
     targets = Dict{Symbol,Float64}(
-        # :mean_spr => 815,
-        :mean_spr => 740,
+        :mean_spr => 815,
+        # :mean_spr => 740,
         :mean_sp  => 815,
-        # :std_spr => 458,
-        :std_spr => 250,
+        :std_spr => 458,
+        # :std_spr => 250,
         # :debt_gdp => 25,
         :debt_gdp => 33,
         :rel_vol => 0.87,
         :corr_yc => 0.97,
         :corr_ytb => -0.77,
         :corr_ysp => -0.72,
-        :def_prob => 5.4
+        # :def_prob => 5.4,
+        :def_prob => 3,
     )
 end
 
@@ -376,13 +377,55 @@ function calibrate(dd::DebtMod, targets = PP_targets();
     xmax = [maxβ, maxd1, maxd2, maxθ]
     xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
 
-    # res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead()))
+    # res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead())) # se traba en mínimos locales
+    # Simulated Annealing no tiene Fminbox 
     res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles = 25))
 end
 
 # Trying with (β, d1, d2, θ) = (0.942, -0.216, 0.267, 0.609): ✓ (464) v = 18.9
 # Trying with (β, d1, d2, θ) = (0.946, -0.206, 0.255, 0.669): ✓ (461) v = 17.4
 
+#=
+function calibrate_SA(dd::DebtMod, targets = PP_targets();
+    minβ = 1/(1+0.1),
+    mind1 = -0.5,
+    mind2 = 0.2,
+    minθ = 0.005,
+    maxβ = 1/(1+0.015),
+    maxd1 = -0.01,
+    maxd2 = 0.4,
+    maxθ = 2,
+    )
+
+    keys = [:mean_spr, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
+
+    function objective(x)
+        β = minβ + (maxβ - minβ)/(1+exp(-x[1]))
+        d1 = mind1 + (maxd1 - mind1)/(1+exp(-x[2]))
+        d2 = mind2 + (maxd2 - mind2)/(1+exp(-x[3]))
+        θ = minθ + (maxθ - minθ)/(1+exp(-x[4]))
+
+        dd.pars[:β] = β
+        dd.pars[:d1] = d1
+        dd.pars[:d2] = d2
+        dd.pars[:θ] = θ
+
+        print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", β)), $(@sprintf("%0.3g", d1)), $(@sprintf("%0.3g", d2)), $(@sprintf("%0.3g", θ))): ")
+
+        mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
+
+        w, t, m = calib_targets(dd, smalltable=false, cond_K = 7_500, uncond_K = 10_000)
+        print("v = $(@sprintf("%0.3g", 100*w))\n")
+        return w
+    end
+
+    xmin = [minβ, mind1, mind2, minθ]
+    xmax = [maxβ, maxd1, maxd2, maxθ]
+    xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
+
+    res = Optim.optimize(objective, xguess, SimulatedAnnealing())
+end
+=#
 #=
 function calib_sphere_ρ(dd::DebtMod;
     ρv, sρ=0.01, kwargs...)
