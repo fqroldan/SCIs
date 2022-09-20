@@ -382,19 +382,6 @@ function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
     res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles=3))
 end
 
-# Only debt 33
-# Trying with (β, d1, d2, θ) = (0.869, -0.299, 0.382, 1.68): ✓ (355) v = 4.14
-#                Data      Bench.    Contrib.  
-# Spread         815       858       0.255     
-# Std Spread     458       402       1.91      
-# Debt-to-GDP    33        29.6      1.34      
-# Default Prob   3         2.8       0.532     
-# Freq. at min_q = 0.00305%
-# Saved as dd_h1_d33.jld2
-
-# Debt 33 + default prob 5.4
-
-
 calib_close(dd::DebtMod; factor = 0.1) = calibrate(dd; factor = 0.1,
     minβ = dd.pars[:β] * (1 - factor),
     maxβ = dd.pars[:β] * (1 + factor),
