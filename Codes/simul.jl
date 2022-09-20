@@ -177,8 +177,8 @@ function PP_targets()
         :corr_yc => 0.97,
         :corr_ytb => -0.77,
         :corr_ysp => -0.72,
-        # :def_prob => 5.4,
-        :def_prob => 3,
+        :def_prob => 5.4,
+        # :def_prob => 3,
     )
 end
 
@@ -341,15 +341,15 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
-function calibrate(dd::DebtMod, targets = PP_targets();
-    minβ = 1/(1+0.1),
-    mind1 = -0.5,
-    mind2 = 0.2,
-    minθ = 0.005,
-    maxβ = 1/(1+0.015),
-    maxd1 = -0.01,
-    maxd2 = 0.4,
-    maxθ = 2,
+function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
+    minβ=1 / (1 + 0.15),
+    mind1=-0.5,
+    mind2=0.2,
+    minθ=0.005,
+    maxβ=1 / (1 + 0.015),
+    maxd1=-0.01,
+    maxd2=0.4,
+    maxθ=2.5
 )
     keys = [:mean_spr, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
@@ -366,9 +366,9 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", β)), $(@sprintf("%0.3g", d1)), $(@sprintf("%0.3g", d2)), $(@sprintf("%0.3g", θ))): ")
 
-        mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
+        mpe!(dd, min_iter=25, tol=1e-6, tinyreport=true)
 
-        w, t, m = calib_targets(dd, smalltable=false, cond_K = 7_500, uncond_K = 10_000)
+        w, t, m = calib_targets(dd, smalltable=false, cond_K=7_500, uncond_K=10_000)
         print("v = $(@sprintf("%0.3g", 100*w))\n")
         return w
     end
@@ -379,13 +379,37 @@ function calibrate(dd::DebtMod, targets = PP_targets();
 
     # res = Optim.optimize(objective, xmin, xmax, xguess, Fminbox(NelderMead())) # se traba en mínimos locales
     # Simulated Annealing no tiene Fminbox 
-    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles = 10))
+    res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles=3))
 end
+
+# Only debt 33
+# Trying with (β, d1, d2, θ) = (0.869, -0.299, 0.382, 1.68): ✓ (355) v = 4.14
+#                Data      Bench.    Contrib.  
+# Spread         815       858       0.255     
+# Std Spread     458       402       1.91      
+# Debt-to-GDP    33        29.6      1.34      
+# Default Prob   3         2.8       0.532     
+# Freq. at min_q = 0.00305%
+# Saved as dd_h1_d33.jld2
+
+# Debt 33 + default prob 5.4
+
+
+calib_close(dd::DebtMod; factor = 0.1) = calibrate(dd; factor = 0.1,
+    minβ = dd.pars[:β] * (1 - factor),
+    maxβ = dd.pars[:β] * (1 + factor),
+    mind1= dd.pars[:d1]* (1 + factor), # d1 is negative in most of them
+    maxd1= dd.pars[:d1]* (1 - factor),
+    mind2= dd.pars[:d2]* (1 - factor),
+    maxd2= dd.pars[:d2]* (1 + factor),
+    minθ = dd.pars[:θ] * (1 - factor),
+    maxθ = dd.pars[:θ] * (1 + factor),
+)
 
 # Trying with (β, d1, d2, θ) = (0.942, -0.216, 0.267, 0.609): ✓ (464) v = 18.9
 # Trying with (β, d1, d2, θ) = (0.946, -0.206, 0.255, 0.669): ✓ (461) v = 17.4
 
-#=
+#= This one goes instantly to one of the edges ??
 function calibrate_SA(dd::DebtMod, targets = PP_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
@@ -422,6 +446,13 @@ function calibrate_SA(dd::DebtMod, targets = PP_targets();
     xmin = [minβ, mind1, mind2, minθ]
     xmax = [maxβ, maxd1, maxd2, maxθ]
     xguess = [dd.pars[key] for key in [:β, :d1, :d2, :θ]]
+
+    gβ = -log((maxβ - minβ)/(dd.pars[:β] - minβ) - 1)
+    g1 = -log((maxd1 - mind1)/(dd.pars[:d1] - mind1) - 1)
+    g2 = -log((maxd2 - mind2)/(dd.pars[:d2] - mind2) - 1)
+    gθ = -log((maxθ - minθ)/(dd.pars[:θ] - minθ) - 1)
+
+    xguess = [gβ, g1, g2, gθ]
 
     res = Optim.optimize(objective, xguess, SimulatedAnnealing())
 end
