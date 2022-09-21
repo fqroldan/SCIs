@@ -847,7 +847,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.001, σθ = 0.05, σ1 = 0.0005, σ2 = 0.0005)
+    σβ = 0.001, σθ = 0.05, σ1 = 0.001, σ2 = 0.001)
     
     update_dd!(dd, best_p)
 
