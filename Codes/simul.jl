@@ -351,6 +351,10 @@ function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
     maxd2=0.4,
     maxθ=2.5
 )
+
+    maxβ = min(0.99, maxβ)
+    minθ = max(1e-3, minθ)
+
     keys = [:mean_spr, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
     function objective(x)
@@ -366,7 +370,7 @@ function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.3g", β)), $(@sprintf("%0.3g", d1)), $(@sprintf("%0.3g", d2)), $(@sprintf("%0.3g", θ))): ")
 
-        mpe!(dd, min_iter=25, tol=1e-6, tinyreport=true)
+        mpe!(dd, min_iter=25, maxiter = 750, tol=1e-6, tinyreport=true)
 
         w, t, m = calib_targets(dd, smalltable=false, cond_K=7_500, uncond_K=10_000)
         print("v = $(@sprintf("%0.3g", 100*w))\n")
@@ -382,6 +386,16 @@ function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
     res = Optim.optimize(objective, xguess, ParticleSwarm(lower=xmin, upper=xmax, n_particles=3))
 end
 
+calib_range(dd::DebtMod; rb, r1, r2, rt) = calibrate(dd;
+    minβ = dd.pars[:β]  - rb,
+    maxβ = dd.pars[:β]  + rb,
+    mind1= dd.pars[:d1] + r1, # d1 is negative in most of them
+    maxd1= dd.pars[:d1] - r1,
+    mind2= dd.pars[:d2] - r2,
+    maxd2= dd.pars[:d2] + r2,
+    minθ = dd.pars[:θ]  - rt,
+    maxθ = dd.pars[:θ]  + rt,
+)
 calib_close(dd::DebtMod; factor = 0.1) = calibrate(dd; factor = 0.1,
     minβ = dd.pars[:β] * (1 - factor),
     maxβ = dd.pars[:β] * (1 + factor),

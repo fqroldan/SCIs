@@ -436,6 +436,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
     dist = 1 + tol
     iter = 0
 
+    upd_η = 0.33
+
     while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
 
@@ -461,8 +463,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
 
         # Guardamos todo
         dd.v[:V] .= new_v
-        dd.q .= new_q
-        dd.qD .= new_qd
+        dd.q .= dd.q + upd_η * (new_q - dd.q)
+        dd.qD .= dd.qD + upd_η * (new_qd - dd.qD)
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
     end
