@@ -389,8 +389,8 @@ end
 calib_range(dd::DebtMod; rb, r1, r2, rt) = calibrate(dd;
     minβ = dd.pars[:β]  - rb,
     maxβ = dd.pars[:β]  + rb,
-    mind1= dd.pars[:d1] + r1, # d1 is negative in most of them
-    maxd1= dd.pars[:d1] - r1,
+    mind1= dd.pars[:d1] - r1,
+    maxd1= dd.pars[:d1] + r1,
     mind2= dd.pars[:d2] - r2,
     maxd2= dd.pars[:d2] + r2,
     minθ = dd.pars[:θ]  - rt,
@@ -847,7 +847,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.001, σθ = 0.05, σ1 = 0.001, σ2 = 0.001)
+    σβ = 0.001, σθ = 0.05, σ1 = 0.005, σ2 = 0.005)
     
     update_dd!(dd, best_p)
 
