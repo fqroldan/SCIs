@@ -427,7 +427,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     end
 end
 
-function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
+function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 0.33, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
 
     new_v = similar(dd.v[:V]);
     new_q = similar(dd.q);
@@ -435,8 +435,6 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
 
     dist = 1 + tol
     iter = 0
-
-    upd_η = 0.33
 
     while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
