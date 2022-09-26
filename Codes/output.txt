@@ -39,6 +39,15 @@ Freq. at min_q = 0.0149%
 
 ######################
 With h = 0.4
+
+Only debt 33
+Trying with (β, d1, d2, θ) = (0.937, -0.192, 0.24, 1.96): ✓ (80) v = 25.7
+Trying with (β, d1, d2, θ) = (0.938, -0.192, 0.24, 2.16): ✓ (600) v = 17.3
+Trying with (β, d1, d2, θ) = (0.931, -0.19, 0.238, 2.36): ✓ (286) v = 10.7
+Trying with (β, d1, d2, θ) = (0.932, -0.19, 0.238, 2.36): ✓ (288) v = 8.77
+Trying with (β, d1, d2, θ) = (0.932, -0.19, 0.238, 2.36): ✓ (209) v = 7.7
+Trying with (β, d1, d2, θ) = (0.933, -0.19, 0.238, 2.36): ✓ (693) v = 7.24
+
 Debt 33 + def prob 5.4
 
 Trying with (β, d1, d2, θ) = (0.943, -0.203, 0.25, 1.7): ✓ (329) v = 5.12
@@ -49,3 +58,10 @@ Debt-to-GDP    33        27.5      3.93
 Default Prob   5.4       5.25      0.0805    
 Freq. at min_q = 0%
 Saved as dd_h4_d33_p54
+
+---
+Trying with (β, d1, d2, θ) = (0.944, -0.201, 0.249, 1.7): (2.58e-06 after 750) v = 4.98
+Trying with (β, d1, d2, θ) = (0.939, -0.202, 0.251, 1.59): ✓ (459) v = 5.87
+Trying with (β, d1, d2, θ) = (0.942, -0.202, 0.251, 1.6): ✓ (189) v = 3.37
+Trying with (β, d1, d2, θ) = (0.938, -0.191, 0.24, 1.62): ✓ (405) v = 5.4
+---Todos estos me dan distinto el equilibrio cuando los reempiezo
