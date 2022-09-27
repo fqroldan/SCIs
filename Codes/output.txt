@@ -65,3 +65,14 @@ Trying with (β, d1, d2, θ) = (0.939, -0.202, 0.251, 1.59): ✓ (459) v = 5.87
 Trying with (β, d1, d2, θ) = (0.942, -0.202, 0.251, 1.6): ✓ (189) v = 3.37
 Trying with (β, d1, d2, θ) = (0.938, -0.191, 0.24, 1.62): ✓ (405) v = 5.4
 ---Todos estos me dan distinto el equilibrio cuando los reempiezo
+
+Trying with (β, d1, d2, θ) = (0.943, -0.204, 0.253, 1.7): (1.94e-05 after 750) v = 3.35 
+
+Trying with (β, d1, d2, θ) = (0.9434, -0.2023, 0.2503, 1.7): v = 4.2765
+               Data      Bench.    Contrib.  
+Spread         815       725       1.59      
+Std Spread     458       481       0.205     
+Debt-to-GDP    33        27.9      3.34      
+Default Prob   5.4       5.18      0.192     
+Freq. at min_q = 0%
+saved as dd_h4_d33d54temp.jld2
