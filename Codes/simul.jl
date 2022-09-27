@@ -208,7 +208,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
         table *= ("$(rpad(nv, maxn+3, " "))")
         table *= ("$(rpad(@sprintf("%0.3g", targets[syms[jn]]), 10, " "))")
         table *= ("$(rpad(@sprintf("%0.3g", moments[syms[jn]]), 10, " "))")
-        contr = 100 * (targets[syms[jn]] / moments[syms[jn]] - 1)^2
+        contr = 100 * (moments[syms[jn]] / targets[syms[jn]] - 1)^2
         table *= ("$(rpad(@sprintf("%0.3g", contr), 10, " "))")
         table *= ("\n")
     end
