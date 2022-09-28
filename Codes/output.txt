@@ -57,7 +57,6 @@ Std Spread     458       493       0.496
 Debt-to-GDP    33        27.5      3.93      
 Default Prob   5.4       5.25      0.0805    
 Freq. at min_q = 0%
-Saved as dd_h4_d33_p54
 
 ---
 Trying with (β, d1, d2, θ) = (0.944, -0.201, 0.249, 1.7): (2.58e-06 after 750) v = 4.98
@@ -75,4 +74,46 @@ Std Spread     458       481       0.205
 Debt-to-GDP    33        27.9      3.34      
 Default Prob   5.4       5.18      0.192     
 Freq. at min_q = 0%
+
+Trying with (β, d1, d2, θ) = (0.9431, -0.2023, 0.2503, 1.7): v = 4.0621
+               Data      Bench.    Contrib.  
+Spread         815       729       1.38      
+Std Spread     458       480       0.208     
+Debt-to-GDP    33        27.9      3.35      
+Default Prob   5.4       5.22      0.113     
+Freq. at min_q = 0%
+
+Trying with (β, d1, d2, θ) = (0.9431, -0.2023, 0.2503, 1.6): v = 3.656
+               Data      Bench.    Contrib.  
+Spread         815       729       1.4       
+Std Spread     458       473       0.103     
+Debt-to-GDP    33        28        3.18      
+Default Prob   5.4       5.49      0.0261    
+
+Trying with (β, d1, d2, θ) = (0.9431, -0.2022, 0.2503, 1.6): v = 3.603
+               Data      Bench.    Contrib.  
+Spread         815       733       1.25      
+Std Spread     458       474       0.116     
+Debt-to-GDP    33        28        3.13      
+Default Prob   5.4       5.55      0.0771    
+Freq. at min_q = 0%
+saved as dd_h4_d33d54.jld2
+
+Trying with (β, d1, d2, θ) = (0.9431, -0.2022, 0.2506, 1.6): v = 3.3227
+               Data      Bench.    Contrib.  
+Spread         815       737       0.907     
+Std Spread     458       471       0.0766    
+Debt-to-GDP    33        28.1      2.19      
+Default Prob   5.4       5.55      0.0732    
+Freq. at min_q = 0%
+
+Trying with (β, d1, d2, θ) = (0.9432, -0.2022, 0.2506, 1.6): v = 3.299
+               Data      Bench.    Contrib.  
+Spread         815       738       0.902     
+Std Spread     458       470       0.066     
+Debt-to-GDP    33        28.1      2.19      
+Default Prob   5.4       5.55      0.0786    
+Freq. at min_q = 0%
 saved as dd_h4_d33d54temp.jld2
+
+
