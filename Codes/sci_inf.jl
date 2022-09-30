@@ -466,7 +466,7 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tin
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
 
-        upd_η = max(0.005, upd_η * 0.98)
+        upd_η = max(0.005, upd_η * 0.99)
     end
     if tinyreport
         dist < tol ? print("✓ ($iter) ") : print("($(@sprintf("%0.3g", dist)) after $iter) ")
