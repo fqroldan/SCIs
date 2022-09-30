@@ -370,7 +370,7 @@ function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
 
         print("Trying with (β, d1, d2, θ) = ($(@sprintf("%0.4g", dd.pars[:β])), $(@sprintf("%0.4g", dd.pars[:d1])), $(@sprintf("%0.4g", dd.pars[:d2])), $(@sprintf("%0.4g", dd.pars[:θ]))): ")
 
-        mpe!(dd, min_iter=25, maxiter = 750, tol=1e-6, tinyreport=true)
+        mpe!(dd, min_iter=25, maxiter = 1_250, tol=1e-6, tinyreport=true)
 
         w, t, m = calib_targets(dd, smalltable=false, cond_K=7_500, uncond_K=10_000)
         print("v = $(@sprintf("%0.3g", 100*w))\n")
