@@ -427,7 +427,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     end
 end
 
-function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 0.33, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
+function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
 
     new_v = similar(dd.v[:V]);
     new_q = similar(dd.q);
@@ -465,6 +465,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 0.33, min_iter = 1, t
         dd.qD .= dd.qD + upd_η * (new_qd - dd.qD)
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
+
+        upd_η = max(0.05, upd_η * 0.98)
     end
     if tinyreport
         dist < tol ? print("✓ ($iter) ") : print("($(@sprintf("%0.3g", dist)) after $iter) ")
