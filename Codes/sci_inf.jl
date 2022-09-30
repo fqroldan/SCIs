@@ -439,6 +439,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tin
     while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
 
+        verbose && iter % 100 == 0 && print(".")
+
         verbose && print("Iteration $iter: ")
 
         # Actualiza el precio de la deuda
