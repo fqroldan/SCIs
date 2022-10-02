@@ -301,7 +301,7 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     moments_vec = [moments[key] for key in keys]
 
     W = diagm(ones(4))
-    W[2,2] = 2 # More weight on std dev of spread
+    W[2,2] = 1 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
     !showtable && smalltable && table_during(pv, pv_uncond, min_q)
