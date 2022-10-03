@@ -813,7 +813,7 @@ end
 function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, tol = 1e-6, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 7e-7, tinyreport = true)
     w, t, m = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
     verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
     w
@@ -847,7 +847,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.001, σθ = 0.05, σ1 = 0.005, σ2 = 0.005)
+    σβ = 0.0002, σθ = 0.01, σ1 = 0.0002, σ2 = 0.0002)
     
     update_dd!(dd, best_p)
 
