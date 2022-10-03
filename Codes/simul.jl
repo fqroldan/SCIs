@@ -813,9 +813,9 @@ end
 function eval_Sobol(dd::DebtMod, key, val, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 7e-7, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 7e-7, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 7e-7, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 5e-7, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 5e-7, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 5e-7, tinyreport = true)
     w, t, m = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
     verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
     w
@@ -878,7 +878,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
         
         setval!(curr_p, key, xopt)
-        mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 7e-7, tinyreport = true)
+        mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 5e-7, tinyreport = true)
 
         if w < W
             W = w
