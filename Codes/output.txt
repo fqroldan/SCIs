@@ -304,7 +304,6 @@ Std Spread     458       495       0.646
 Debt-to-GDP    33        27        3.27      
 Default Prob   5.4       5.44      0.00598   
 Freq. at min_q = 0%
-saved as dd_h4_dd33p54temp.jld2
 
 Trying with (β, d1, d2, θ) = (0.942, -0.2015, 0.25, 1.7): v = 3.53
                Data      Bench.    Contrib.  
@@ -314,3 +313,13 @@ Debt-to-GDP    33        27.7      2.58
 Default Prob   5.4       5.29      0.0428    
 Freq. at min_q = 0%
 saved as dd_h4_dd33p54temp2.jld2
+
+Trying with (β, d1, d2, θ) = (0.941, -0.201, 0.25, 1.7): v = 3.01
+               Data      Bench.    Contrib.  
+Spread         815       770       0.31      
+Std Spread     458       476       0.149     
+Debt-to-GDP    33        27.8      2.44      
+Default Prob   5.4       5.58      0.112     
+Freq. at min_q = 0%
+saved as dd_h4_dd33p54temp.jld2
+
