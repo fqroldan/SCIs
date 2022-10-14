@@ -26,7 +26,7 @@ function Default(;
     r=0.01,
     θ=1.6155,
     ψ=0.0385,
-    χ = 0.01,
+    χ = 0.015,
     α=0,
     τ=0,
     ρ=0.05,
@@ -37,10 +37,10 @@ function Default(;
     ρy=0.9484,
     σy=0.02,
     # σy = 0.026,
-    Nb=200,
-    Ny=21,
-    bmax=1.5,
-    std_devs = 3,
+    Nb=150,
+    Ny=51,
+    bmax=1.25,
+    std_devs = 2,
     κ = r+ρ,
     min_q = 0.35,
 )
@@ -307,7 +307,7 @@ function logsumexp_onepass(X, w)
     a = -Inf
     r = zero(eltype(X))
     for (x, wi) in zip(X, w)
-        if x ≤ a
+        if x <= a
             # standard computation
             r += wi * exp(x - a)
         else
@@ -321,7 +321,7 @@ function logsumexp_onepass(X, w)
 end
 
 function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::DebtMod, gr, x, w; rep)
-    θ, wL, βL, ρ, ψ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ))
+    θ, wL, βL, ρ, ψ, ℏ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ, :ℏ))
     
     cL = wL
     if rep
@@ -332,7 +332,6 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         bpv = bv
     end
 
-    # Ev = 0.0
     for js in axes(gr, 1)
         jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
 
@@ -341,7 +340,11 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         
         w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
 
-        x[js] = -θ * itp_vL(bpv, jyp, jζp)
+        # haircut when going from repayment to default
+        b_pv = bpv
+        # b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
+
+        x[js] = -θ * itp_vL(b_pv, jyp, jζp)
     end
 
     # log ∑_i prob_i exp(-θ v^L_i)
@@ -358,13 +361,12 @@ function v_lender_iter!(dd::Default)
     itp_vL = make_itp(dd, dd.vL);
 
     if dd.pars[:θ] > 1e-3
+        gr = gridmake(1:length(dd.gr[:y]), 1:2)
         Threads.@threads for jy in eachindex(dd.gr[:y])
             yv = dd.gr[:y][jy]
             coupon = coupon_rate(yv, dd)
 
             py = dd.P[:y][jy, :]
-
-            gr = gridmake(1:length(dd.gr[:y]), 1:2)
 
             w = zeros(size(gr,1))
             x = zeros(size(gr,1))
@@ -387,7 +389,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
     # Interpola el precio de la deuda (para mañana)
-    itp_qd = make_itp(dd, dd.qD);|
+    itp_qd = make_itp(dd, dd.qD);
     itp_q = make_itp(dd, dd.q);
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
