@@ -341,8 +341,8 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
 
         # haircut when going from repayment to default
-        b_pv = bpv
-        # b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
+        # b_pv = bpv
+        b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
 
         x[js] = -θ * itp_vL(b_pv, jyp, jζp)
     end
