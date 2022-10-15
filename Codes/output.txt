@@ -339,3 +339,13 @@ Debt-to-GDP    33        28.8      1.6
 Default Prob   5.4       5.64      0.201     
 Freq. at min_q = 0%
 saved as dd_h4_dd33p54temp2.jld2
+
+#### With haircut in SDF fixed
+Solving with (β, d1, d2, θ) = (0.9295, -0.1973, 0.2496, 1.786): v = 2.51
+               Data      Bench.    Contrib.  
+Spread         815       784       0.143     
+Std Spread     458       430       0.368     
+Debt-to-GDP    33        29        1.45      
+Default Prob   5.4       5.8       0.553     
+Freq. at min_q = 0%
+saved as dd_h4_d33p54.jld2
