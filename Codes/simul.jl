@@ -849,7 +849,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500,
-    σβ = 0.0001, σθ = 0.005, σ1 = 0.0001, σ2 = 0.00002)
+    σβ = 0.0002, σθ = 0.005, σ1 = 0.0005, σ2 = 0.0001)
     
     update_dd!(dd, best_p)
 
@@ -892,7 +892,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
     end
 end
 
-function mpe_simul!(dd::DebtMod; K = 2, min_iter = 25, maxiter = 1_200, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul)
+function mpe_simul!(dd::DebtMod; K = 4, min_iter = 25, maxiter = 1_200, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul)
     
     initialrep && print("Solving with (β, d1, d2, θ) = ($(@sprintf("%0.4g", dd.pars[:β])), $(@sprintf("%0.4g", dd.pars[:d1])), $(@sprintf("%0.4g", dd.pars[:d2])), $(@sprintf("%0.4g", dd.pars[:θ])))\n")
 
@@ -903,7 +903,9 @@ function mpe_simul!(dd::DebtMod; K = 2, min_iter = 25, maxiter = 1_200, tol = 1e
     mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false)
 
     if simul
-        w,t,m=calib_targets(dd, cond_K = 7_500, uncond_K = 10_000, smalltable=true);
+        w,t,m=calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=true);
         return 100w
     end
 end
+
+# pmat, DEP = simul_dist(dd, K = 1_000, burn_in = 1_000, T = 240); DEP
