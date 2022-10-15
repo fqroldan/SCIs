@@ -1,6 +1,6 @@
 function comp_argbond(dd::DebtMod; show_simul=false)
-    @assert dd.pars[:α] == 0 && dd.pars[:τ] <= min(dd.gr[:y])
-    
+    @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+
     mpe_simul!(dd, simul=show_simul)
 
     Ny = length(dd.gr[:y])
