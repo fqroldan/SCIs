@@ -348,4 +348,13 @@ Std Spread     458       430       0.368
 Debt-to-GDP    33        29        1.45      
 Default Prob   5.4       5.8       0.553     
 Freq. at min_q = 0%
+
+# Best from pseudoSobol before:
+Solving with (β, d1, d2, θ) = (0.9277, -0.1972, 0.2498, 1.902): v = 1.83
+               Data      Bench.    Contrib.  
+Spread         815       803       0.0232    
+Std Spread     458       438       0.2       
+Debt-to-GDP    33        29        1.48      
+Default Prob   5.4       5.59      0.128     
+Freq. at min_q = 0%
 saved as dd_h4_d33p54.jld2
