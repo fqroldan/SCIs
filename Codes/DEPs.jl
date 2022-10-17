@@ -71,20 +71,23 @@ function distorted_transitions(dd::DebtMod)
     Ny = length(dd.gr[:y])
     Nζ = 2
 
-    dist_P = Array{Float64, 4}(undef, Nb, Ny, Nζ, Ny)
-    
-    for jbp in eachindex(dd.gr[:b]), jy in eachindex(dd.gr[:y]), jζ in 1:2
+    knots = (dd.gr[:b], 1:Ny, 1:2)
+    itp_vL = interpolate(knots, dd.vL, (Gridded(Linear()), NoInterp(), NoInterp()))
+
+    dist_P = Array{Float64,4}(undef, Nb, Ny, Nζ, Ny)
+
+    for (jbp, bpv) in enumerate(dd.gr[:b]), jy in eachindex(dd.gr[:y]), jζ in 1:2
 
         sum_prob = 0.0
         for jyp in eachindex(dd.gr[:y])
 
             if jζ == 1 # Repayment
                 prob_def = dd.v[:prob][jbp, jyp]
+                cond_sdf = prob_def * exp(-θ * itp_vL(bpv, jyp, 2)) + (1 - prob_def) * exp(-θ * dd.vL[jbp, jyp, 1])
             else
-                prob_def = 1-ψ
+                prob_def = (1 - ψ) + ψ * dd.v[:prob][jbp, jyp]
+                cond_sdf = prob_def * exp(-θ * dd.vL[jbp, jyp, 2]) + (1 - prob_def) * exp(-θ * dd.vL[jbp, jyp, 1])
             end
-
-            cond_sdf = prob_def * exp(-θ * dd.vL[jbp, jyp, 2]) + (1-prob_def) * exp(-θ * dd.vL[jbp, jyp, 1])
 
             prob = dd.P[:y][jy, jyp] * cond_sdf
 
@@ -173,6 +176,8 @@ end
 function simul_dist(dd::DebtMod; K = 1_000, burn_in = 800, T = 240)
     ygrid = range(extrema(dd.gr[:y])..., length=21)
     pars = dd.pars
+
+    Random.seed!(25)
 
     dist_P = distorted_transitions(dd)
 
