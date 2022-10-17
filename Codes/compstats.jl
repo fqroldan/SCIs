@@ -5,6 +5,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, DEP=false)
 
     Ny = length(dd.gr[:y])
     v_noncont = dd.v[:V][1, ceil(Int, Ny / 2)]
+    print("V with noncont: $v_noncont\n")
 
     if DEP
         _, DEP_noncont = simul_dist(dd, K=1_000, burn_in=1_000, T=240)
@@ -17,6 +18,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, DEP=false)
     mpe_simul!(dd, maxiter=500, K=8, initialrep=false, simul=false)
 
     v_linear = dd.v[:V][1, ceil(Int, Ny / 2)]
+    print("V with linear: $v_linear\n")
 
     if DEP
         _, DEP_linear = simul_dist(dd, K=1_000, burn_in=1_000, T=240)
@@ -28,6 +30,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, DEP=false)
     mpe_simul!(dd, maxiter=500, K=8, initialrep=false, simul=false)
 
     v_threshold = dd.v[:V][1, ceil(Int, Ny / 2)]
+    print("V with threshold: $v_threshold\n")
     if DEP
         _, DEP_threshold = simul_dist(dd, K=1_000, burn_in=1_000, T=240)
         print("DEP with threshold: $DEP_threshold\n")
