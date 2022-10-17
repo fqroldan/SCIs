@@ -1,7 +1,7 @@
 function comp_argbond(dd::DebtMod; show_simul=false, DEP=false)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
-    mpe_simul!(dd, simul=show_simul)
+    mpe_simul!(dd, maxiter=500, K=8, simul=show_simul)
 
     Ny = length(dd.gr[:y])
     v_noncont = dd.v[:V][1, ceil(Int, Ny / 2)]
