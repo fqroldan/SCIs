@@ -76,6 +76,9 @@ function Default(;
     return Default(pars, gr, P, v, vL, gc, gb, q, qD)
 end
 
+cons_equiv(v::Number, dd::DebtMod) = cons_equiv(v, dd.pars[:β], dd.pars[:γ])
+cons_equiv(v::Number, β::Number, γ::Number) = (v * (1-β) * (1-γ))^(1/(1-γ))
+
 function logsumexp(a::AbstractVector{<:Real})
     m = maximum(a)
     return m + log.(sum(exp.(a .- m)))
@@ -337,18 +340,29 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
 
         p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
         prob = py[jyp]
-        
+
         w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
 
         # haircut when going from repayment to default
-        # b_pv = bpv
         b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
 
         x[js] = -θ * itp_vL(b_pv, jyp, jζp)
     end
-
     # log ∑_i prob_i exp(-θ v^L_i)
     Tv = logsumexp_onepass(x, w) / -θ
+
+    # # Without robustness to the preference shock
+    # vLp = similar(dd.gr[:y])
+    # for jyp in eachindex(dd.gr[:y])
+
+    #     p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
+    #     bpv_R = bpv
+    #     bpv_D = ifelse(rep, (1-ℏ)*bpv, bpv)
+
+    #     vLp[jyp] = p_def * itp_vL(bpv_D, jyp, 2) + (1-p_def) * itp_vL(bpv_R, jyp, 1)
+    # end
+    # Tv = logsumexp(-θ * vLp) / -θ
+
     vL = cL + βL * Tv
 
     return vL
