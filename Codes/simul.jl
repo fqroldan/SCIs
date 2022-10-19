@@ -164,13 +164,39 @@ function compute_moments(pv::Vector{SimulPath})
     return moments
 end
 
-function PP_targets()
+calib_targets() = targets_HMR()
+
+targets_HMR() = Dict{Symbol, Float64}(
+    :mean_spr => 744,
+    :std_spr => 251,
+    :debt_gdp => 33,
+    :def_prob => 5.4,
+    :rel_vol => 0.87,
+    :corr_yc => 0.97,
+    :corr_ytb => -0.77,
+    :corr_ysp => -0.72,
+)
+
+targets_Mallucci() = Dict{Symbol, Float64}(
+    :mean_spr => 714,
+    :std_spr => 471,
+    :debt_gdp => 33,
+    :def_prob => 5.4,
+    :rel_vol => 0.87,
+    :corr_yc => 0.97,
+    :corr_ytb => -0.77,
+    :corr_ysp => -0.72,
+)
+
+function targets_PP()
     targets = Dict{Symbol,Float64}(
-        :mean_spr => 815,
-        # :mean_spr => 740,
+        :mean_spr => 815, # Pouzo-Presno
+        # :mean_spr => 744, # Hatchondo-Martinez-Roch
+        # :mean_spr => 714,   # Mallucci
         :mean_sp  => 815,
-        :std_spr => 458,
-        # :std_spr => 250,
+        :std_spr => 458,  # PP
+        # :std_spr => 251,  # HMR
+        # :std_spr => 471,    # Mallucci
         # :debt_gdp => 25,
         :debt_gdp => 33,
         :rel_vol => 0.87,
@@ -186,7 +212,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
 
     syms = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
 
-    targets = PP_targets()
+    targets = calib_targets()
 
     moments = compute_moments(pv)
     moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
@@ -199,7 +225,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
     table *= ("$(rpad("Data", 10, " "))")
-    table *= ("$(rpad("Bench.", 10, " "))")
+    table *= ("$(rpad("Model", 10, " "))")
     table *= ("$(rpad("Contrib.", 10, " "))")
     table *= "\n"
 
@@ -225,7 +251,7 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
     # :mean_sp,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
-    targets = PP_targets()
+    targets = calib_targets()
 
     moments = compute_moments(pv)
     # Number of defaults divided total periods with market access (ζ = 1)
@@ -281,7 +307,7 @@ end
 function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false), smalltable=false)
     min_q = dd.pars[:min_q]
     
-    targets = PP_targets()
+    targets = calib_targets()
 
     # keys = [:mean_spr,
     # # :mean_sp,
@@ -341,7 +367,7 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
-function calibrate(dd::DebtMod, targets=PP_targets(); factor=0.1,
+function calibrate(dd::DebtMod, targets=calib_targets(); factor=0.1,
     minβ=1 / (1 + 0.15),
     mind1=-0.5,
     mind2=0.2,
@@ -411,7 +437,7 @@ calib_close(dd::DebtMod; factor = 0.1) = calibrate(dd; factor = 0.1,
 # Trying with (β, d1, d2, θ) = (0.946, -0.206, 0.255, 0.669): ✓ (461) v = 17.4
 
 #= This one goes instantly to one of the edges ??
-function calibrate_SA(dd::DebtMod, targets = PP_targets();
+function calibrate_SA(dd::DebtMod, targets = calib_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
     mind2 = 0.2,
@@ -864,8 +890,8 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
     while iter < maxiter
         iter += 1
 
-        js = iter % 4
-        js == 0 ? js = 4 : nothing
+        js = iter % length(names)
+        js == 0 ? js = length(names) : nothing
 
         key = names[js]
         σ = σvec[js]/2
