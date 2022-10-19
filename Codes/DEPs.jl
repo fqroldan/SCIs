@@ -102,7 +102,7 @@ end
 
 # Simul with dist d, evaluate likelihood for both d and d'
 
-function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp_b, pars::Dict, ygrid)
+function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp_b, pars::Dict, ygrid, rng, ξt)
     ψ, ℏ = (pars[sym] for sym in (:ψ, :ℏ))
 
     if def
@@ -114,7 +114,7 @@ function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp
     end
 
     probs = Weights([itp_P_true(bp, y0, jζ, yv) for yv in ygrid])
-    yp = sample(ygrid, probs)
+    yp = sample(rng, ygrid, probs)
 
     # probs = cumsum(itp_P_true(bp, y0, jζ, yv) for yv in ygrid)
     # jyp = findfirst(rand() .<= probs)
@@ -129,7 +129,7 @@ function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp
         prob_def = itp_prob(bp, yp)
     end
 
-    ξ_def = rand()
+    ξ_def = ξt #rand()
     def_p = (ξ_def <= prob_def)
 
     new_def = (!def && def_p)
@@ -141,7 +141,7 @@ function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp
     return def_p, bp, yp, loglik_true, loglik_alt
 end
 
-function simul_eval(itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, burn_in, T)
+function simul_eval(itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, burn_in, T, rng)
 
     b0 = 0.0
     y0 = mean(ygrid)
@@ -151,6 +151,8 @@ function simul_eval(itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, burn_in
     loglik_true = 0.0
     loglik_alt = 0.0
 
+    ξvec = rand(rng, burn_in+T)
+
     for t in 1:burn_in+T
 
         tt = t - burn_in
@@ -159,8 +161,10 @@ function simul_eval(itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, burn_in
             pp[:b, tt] = b0
             pp[:ζ, tt] = ifelse(def_0, 2, 1)
         end
+        
+        ξt = ξvec[t]
 
-        def_0, b0, y0, loglik_true_t, loglik_alt_t = iter_simul_dist(b0, y0, def_0, itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid)
+        def_0, b0, y0, loglik_true_t, loglik_alt_t = iter_simul_dist(b0, y0, def_0, itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, rng, ξt)
 
         if tt > 0
             loglik_true += loglik_true_t
@@ -177,7 +181,7 @@ function simul_dist(dd::DebtMod; K = 1_000, burn_in = 800, T = 240)
     ygrid = range(extrema(dd.gr[:y])..., length=21)
     pars = dd.pars
 
-    Random.seed!(25)
+    rng = MersenneTwister(1989)
 
     dist_P = distorted_transitions(dd)
 
@@ -196,8 +200,8 @@ function simul_dist(dd::DebtMod; K = 1_000, burn_in = 800, T = 240)
     prob_wrong = 0.0
     Threads.@threads for k in 1:K
 
-        pp_from_orig, wrong_from_orig = simul_eval(itp_P_orig, itp_P_dist, itp_prob, itp_b, pars, ygrid, burn_in, T)
-        pp_from_dist, wrong_from_dist = simul_eval(itp_P_dist, itp_P_orig, itp_prob, itp_b, pars, ygrid, burn_in, T)
+        pp_from_orig, wrong_from_orig = simul_eval(itp_P_orig, itp_P_dist, itp_prob, itp_b, pars, ygrid, burn_in, T, rng)
+        pp_from_dist, wrong_from_dist = simul_eval(itp_P_dist, itp_P_orig, itp_prob, itp_b, pars, ygrid, burn_in, T, rng)
 
         prob_wrong += (wrong_from_orig + wrong_from_dist) / 2
 
