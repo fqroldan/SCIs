@@ -183,21 +183,6 @@ function max_adj(jb, jy, bmax, itp_q, dd::DebtMod)
     return bmin
 end
 
-function borrowing_limit(jy, itp_q, dd::DebtMod)
-    bmin, bmax = extrema(dd.gr[:b])
-
-    min_q = dd.pars[:min_q]
-
-    objf(bpv) = (itp_q(bpv, jy) - min_q)^2
-
-    if itp_q(bmax, jy) < min_q
-        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
-        bmax = res.minimizer
-    end
-    return bmax
-end
-
-
 function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     """ Elige b' en (b,y) para maximizar la función de valor """
 
@@ -208,7 +193,7 @@ function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_Ev, dd)[1]
 
     if bmax - bmin < 1e-4
-        b_star = bmin
+        b_star = bmax
     else
         # Resuelve el máximo
         res = Optim.optimize(obj_f, bmin, bmax, GoldenSection())
@@ -244,14 +229,42 @@ function value_default(jb, jy, dd::DebtMod)
     return c, v
 end
 
-function make_itp_vp(dd::DebtMod, jy)
+function borrowing_limit_q(jy, itp_q, dd::DebtMod)
+    bmin, bmax = extrema(dd.gr[:b])
+
+    min_q = dd.pars[:min_q]
+
+    objf(bpv) = (itp_q(bpv, jy) - min_q)^2
+
+    if itp_q(bmax, jy) < min_q
+        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
+        bmax = res.minimizer
+    end
+    return bmax
+end
+
+function borrowing_limit(itp_def, dd::DebtMod)
+    bmin, bmax = extrema(dd.gr[:b])
+
+    max_prob = 0.975
+
+    objf(bpv) = (itp_def(bpv) - max_prob)^2
+
+    if itp_def(bmax) > max_prob
+        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
+        bmax = res.minimizer
+    end
+    return bmax
+end
+
+function make_itp_vp(dd::DebtMod, jy, mat)
     Ev = similar(dd.gr[:b])
     for jbp in eachindex(dd.gr[:b])
         Evc = 0.0
         for jyp in eachindex(dd.gr[:y])
             prob = dd.P[:y][jy,jyp]
 
-            Evc += prob * dd.v[:V][jbp, jyp]
+            Evc += prob * mat[jbp, jyp]
         end
         Ev[jbp] = Evc
     end
@@ -264,9 +277,11 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
     # itp_v = make_itp(dd, dd.v[:V]);
     
     Threads.@threads for jy in eachindex(dd.gr[:y])
-        itp_Ev = make_itp_vp(dd, jy);
-        
-        bmax = borrowing_limit(jy, itp_q, dd)
+        itp_Ev = make_itp_vp(dd, jy, dd.v[:V]);
+        itp_def = make_itp_vp(dd, jy, dd.v[:prob]);
+
+        # bmax = borrowing_limit_q(jy, itp_q, dd)
+        bmax = borrowing_limit(itp_def, dd)
         for jb in eachindex(dd.gr[:b])
         
             # En repago
