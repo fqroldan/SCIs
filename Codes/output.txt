@@ -368,3 +368,22 @@ Std Spread     458       409       1.15
 Debt-to-GDP    33        29.8      0.944     
 Default Prob   5.4       5.97      1.12      
 saved as dd_h4_dd33p54temp4.jld2
+
+With HMR
+Solving with (β, d1, d2, θ) = (0.9259, -0.1939, 0.2486, 1.612)
+               Data      Model     Contrib.  
+Spread         744       571       5.4       
+Std Spread     251       304       4.53      
+Debt-to-GDP    33        30.1      0.747     
+Default Prob   5.4       4.53      2.61
+saved as dd_h4_withHMR1.jld2
+
+With Mallucci
+Solving with (β, d1, d2, θ) = (0.9254, -0.1945, 0.2485, 1.609)
+               Data      Model     Contrib.  
+Spread         714       707       0.00878   
+Std Spread     471       382       3.56      
+Debt-to-GDP    33        29.7      1         
+Default Prob   5.4       5.66      0.227     
+Freq. at min_q = 0%
+saved as dd_h4_withMallucci2.jld2
