@@ -164,7 +164,7 @@ function compute_moments(pv::Vector{SimulPath})
     return moments
 end
 
-calib_targets() = targets_HMR()
+calib_targets() = targets_Mallucci()
 
 targets_HMR() = Dict{Symbol, Float64}(
     :mean_spr => 744,
@@ -836,18 +836,18 @@ function setval!(pars::Dict, key, val)
     end
 end
 
-function eval_Sobol(dd::DebtMod, key, val, verbose)
+function eval_Sobol(dd::DebtMod, key, val, tol, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 1e-6, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 1e-6, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 1e-6, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
+    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
     w, t, m = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
     verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
     w
 end
 
-function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
+function iter_Sobol(dd::DebtMod, key, σ, tol; Nx = 15)
     
     x = getval(key, dd.pars)
     xvec = range(x-σ, x+σ, length = Nx)
@@ -859,7 +859,7 @@ function iter_Sobol(dd::DebtMod, key, σ; Nx = 15)
     
     for (jx, xv) in enumerate(xvec)
 
-        w = eval_Sobol(dd, key, xv, (jx==jc))
+        w = eval_Sobol(dd, key, xv, tol, (jx==jc))
         jx == jc && print("w = $(@sprintf("%0.3g", 100*w))\n")
 
         if w < W
@@ -874,7 +874,7 @@ end
 
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
-    maxiter = 500,
+    maxiter = 500, tol = 1e-6, 
     σβ = 0.0002, σθ = 0.005, σ1 = 0.0005, σ2 = 0.0001)
     
     update_dd!(dd, best_p)
@@ -899,12 +899,12 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         Nx = Nxs[js]
 
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(curr_p)\n")
-        xopt, jopt, w, x_og = iter_Sobol(dd, key, σ, Nx=Nx)
+        xopt, jopt, w, x_og = iter_Sobol(dd, key, σ, tol, Nx=Nx)
         
         print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
         
         setval!(curr_p, key, xopt)
-        mpe!(dd, min_iter = 25, maxiter = 1_000, tol = 5e-7, tinyreport = true)
+        mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
 
         if w < W
             W = w
