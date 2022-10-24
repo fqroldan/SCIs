@@ -164,7 +164,7 @@ function compute_moments(pv::Vector{SimulPath})
     return moments
 end
 
-calib_targets() = targets_Mallucci()
+calib_targets() = targets_PP_OG()
 
 targets_HMR() = Dict{Symbol, Float64}(
     :mean_spr => 744,
@@ -182,6 +182,17 @@ targets_Mallucci() = Dict{Symbol, Float64}(
     :std_spr => 471,
     :debt_gdp => 33,
     :def_prob => 5.4,
+    :rel_vol => 0.87,
+    :corr_yc => 0.97,
+    :corr_ytb => -0.77,
+    :corr_ysp => -0.72,
+)
+
+targets_PP_OG() = Dict{Symbol, Float64}(
+    :mean_spr => 815,
+    :std_spr => 458,
+    :debt_gdp => 46/4,
+    :def_prob => 3.0,
     :rel_vol => 0.87,
     :corr_yc => 0.97,
     :corr_ytb => -0.77,
@@ -207,6 +218,8 @@ function targets_PP()
         # :def_prob => 3,
     )
 end
+
+
 
 function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q)
 
@@ -839,11 +852,8 @@ end
 function eval_Sobol(dd::DebtMod, key, val, tol, verbose)
     setval!(dd.pars, key, val)
 
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
-    mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
-    w, t, m = calib_targets(dd, smalltable=verbose, cond_K = 7_500, uncond_K = 10_000)
-    verbose || print("w=$(@sprintf("%0.3g", 100*w)) ")
+    w = mpe_simul!(dd, tol = tol, simultable = verbose, initialrep = false)
+    verbose || print("w=$(@sprintf("%0.3g", w)) ")
     w
 end
 
@@ -860,7 +870,7 @@ function iter_Sobol(dd::DebtMod, key, σ, tol; Nx = 15)
     for (jx, xv) in enumerate(xvec)
 
         w = eval_Sobol(dd, key, xv, tol, (jx==jc))
-        jx == jc && print("w = $(@sprintf("%0.3g", 100*w))\n")
+        jx == jc && print("w = $(@sprintf("%0.3g", w))\n")
 
         if w < W
             W = w
@@ -875,7 +885,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500, tol = 1e-6, 
-    σβ = 0.0002, σθ = 0.005, σ1 = 0.0005, σ2 = 0.0001)
+    σβ = 0.0005, σθ = 0.01, σ1 = 0.001, σ2 = 0.0002)
     
     update_dd!(dd, best_p)
 
@@ -901,7 +911,7 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(curr_p)\n")
         xopt, jopt, w, x_og = iter_Sobol(dd, key, σ, tol, Nx=Nx)
         
-        print("\nBest objective: $(@sprintf("%0.3g", 100*w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
+        print("\nBest objective: $(@sprintf("%0.3g", w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
         
         setval!(curr_p, key, xopt)
         mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
@@ -912,13 +922,13 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
                 best_p[key] = val
             end
         end
-        print("Best so far $(@sprintf("%0.3g", 100*W))\n")
+        print("Best so far $(@sprintf("%0.3g", W))\n")
         
         update_dd!(dd, curr_p)
     end
 end
 
-function mpe_simul!(dd::DebtMod; K = 4, min_iter = 25, maxiter = 1_200, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul)
+function mpe_simul!(dd::DebtMod; K = 6, min_iter = 25, maxiter = 600, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul, tinyrep = false, simultable=true)
     
     initialrep && print("Solving with (β, d1, d2, θ) = ($(@sprintf("%0.4g", dd.pars[:β])), $(@sprintf("%0.4g", dd.pars[:d1])), $(@sprintf("%0.4g", dd.pars[:d2])), $(@sprintf("%0.4g", dd.pars[:θ])))\n")
 
@@ -926,10 +936,10 @@ function mpe_simul!(dd::DebtMod; K = 4, min_iter = 25, maxiter = 1_200, tol = 1e
         mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, tinyreport = true)
     end
 
-    mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false)
+    mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false, tinyreport = tinyrep)
 
     if simul
-        w,t,m=calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=true);
+        w,t,m=calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=simultable);
         return 100w
     end
 end
