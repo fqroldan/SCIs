@@ -246,7 +246,7 @@ end
 function borrowing_limit(itp_def, dd::DebtMod)
     bmin, bmax = extrema(dd.gr[:b])
 
-    max_prob = 0.975
+    max_prob = 0.95
 
     objf(bpv) = (itp_def(bpv) - max_prob)^2
 
