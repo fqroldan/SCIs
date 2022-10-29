@@ -26,7 +26,7 @@ function Default(;
     r=0.01,
     θ=1.6155,
     ψ=0.0385,
-    χ = 0.015,
+    χ = 0.01,
     α=0,
     τ=0,
     ρ=0.05,
@@ -38,9 +38,9 @@ function Default(;
     σy=0.02,
     # σy = 0.026,
     Nb=150,
-    Ny=51,
+    Ny=91,
     bmax=1.25,
-    std_devs = 2,
+    std_devs = 5,
     κ = r+ρ,
     min_q = 0.35,
 )
@@ -338,7 +338,7 @@ function logsumexp_onepass(X, w)
     return a + log(r)
 end
 
-function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::DebtMod, gr, x, w; rep)
+function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::DebtMod, vLp; rep)
     θ, wL, βL, ρ, ψ, ℏ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ, :ℏ))
     
     cL = wL
@@ -350,33 +350,32 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         bpv = bv
     end
 
-    for js in axes(gr, 1)
-        jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
-
-        p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
-        prob = py[jyp]
-
-        w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
-
-        # haircut when going from repayment to default
-        b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
-
-        x[js] = -θ * itp_vL(b_pv, jyp, jζp)
-    end
-    # log ∑_i prob_i exp(-θ v^L_i)
-    Tv = logsumexp_onepass(x, w) / -θ
-
-    # # Without robustness to the preference shock
-    # vLp = similar(dd.gr[:y])
-    # for jyp in eachindex(dd.gr[:y])
+    # for js in axes(gr, 1)
+    #     jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
 
     #     p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
-    #     bpv_R = bpv
-    #     bpv_D = ifelse(rep, (1-ℏ)*bpv, bpv)
+    #     prob = py[jyp]
 
-    #     vLp[jyp] = p_def * itp_vL(bpv_D, jyp, 2) + (1-p_def) * itp_vL(bpv_R, jyp, 1)
+    #     w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
+
+    #     # haircut when going from repayment to default
+    #     b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
+
+    #     x[js] = -θ * itp_vL(b_pv, jyp, jζp)
     # end
-    # Tv = logsumexp(-θ * vLp) / -θ
+    # # log ∑_i prob_i exp(-θ v^L_i)
+    # Tv = logsumexp_onepass(x, w) / -θ
+
+    # Without robustness to the preference shock
+    for jyp in eachindex(dd.gr[:y])
+
+        p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
+        bpv_R = bpv
+        bpv_D = ifelse(rep, (1-ℏ)*bpv, bpv)
+
+        vLp[jyp] = p_def * itp_vL(bpv_D, jyp, 2) + (1-p_def) * itp_vL(bpv_R, jyp, 1)
+    end
+    Tv = logsumexp_onepass(-θ * vLp, py) / -θ
 
     vL = cL + βL * Tv
 
@@ -390,21 +389,22 @@ function v_lender_iter!(dd::Default)
     itp_vL = make_itp(dd, dd.vL);
 
     if dd.pars[:θ] > 1e-3
-        gr = gridmake(1:length(dd.gr[:y]), 1:2)
+        # gr = gridmake(1:length(dd.gr[:y]), 1:2)
         Threads.@threads for jy in eachindex(dd.gr[:y])
             yv = dd.gr[:y][jy]
             coupon = coupon_rate(yv, dd)
 
             py = dd.P[:y][jy, :]
 
-            w = zeros(size(gr,1))
-            x = zeros(size(gr,1))
+            # w = zeros(size(gr,1))
+            # x = zeros(size(gr,1))
+            vLp = similar(dd.gr[:y])
             
             for (jb, bv) in enumerate(dd.gr[:b])
 
                 bpv = dd.gb[jb, jy]
-                dd.vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=true)
-                dd.vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=false)
+                dd.vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=true)
+                dd.vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=false)
             end
         end
     else
