@@ -1,7 +1,7 @@
 function update_q_nodef!(new_q, q_star, r, dd::Default)
     ρ = dd.pars[:ρ]
 
-    for (jy, yv) in enumerate(dd.gr[:y])
+    for jy in eachindex(dd.gr[:y])
         Eq = 0.0
         py = dd.P[:y][jy, :]
         for (jyp, ypv) in enumerate(dd.gr[:y])
@@ -29,7 +29,7 @@ function q_nodef(dd::Default, r::Float64; tol = 1e-6, maxiter = 2_000, verbose =
         iter += 1
         
         update_q_nodef!(new_q, q_star, r, dd)
-        dist = norm(new_q - q_star) / (1+norm(q_star))
+        dist = norm(new_q - q_star) / max(1, norm(q_star))
 
         q_star .= new_q
 
@@ -38,13 +38,14 @@ function q_nodef(dd::Default, r::Float64; tol = 1e-6, maxiter = 2_000, verbose =
     return q_star
 end
 
-function yield_grid(dd::Default, Nr = 801)
+function yield_grid(dd::Default, Nr)
     Ny = length(dd.gr[:y])
-    rgrid = range(0.01, 0.2, length=Nr)
+    rgrid = range(0.0, 0.2, length=Nr+1)[2:end]
 
     q_mat = zeros(Nr, Ny)
 
-    for (jr, rv) in enumerate(rgrid)
+    Threads.@threads for jr in eachindex(rgrid)
+        rv = rgrid[jr]
 
         qstar = q_nodef(dd, rv)
 
@@ -53,7 +54,7 @@ function yield_grid(dd::Default, Nr = 801)
     return q_mat, rgrid
 end
 
-function yields_from_q(q_mat, rgrid, dd::Default, Nq = 801)
+function yields_from_q(q_mat, rgrid, dd::Default, Nq)
     Ny = length(dd.gr[:y])
 
     rmin, rmax = extrema(rgrid)
@@ -73,7 +74,7 @@ function yields_from_q(q_mat, rgrid, dd::Default, Nq = 801)
     return r_mat, qgrid
 end
 
-function get_yields(dd::Default, Nr = 801, Nq = Nr)
+function get_yields(dd::Default, Nr, Nq)
     
     q_mat, rgrid = yield_grid(dd, Nr)
     r_mat, qgrid = yields_from_q(q_mat, rgrid, dd, Nq)
@@ -81,7 +82,7 @@ function get_yields(dd::Default, Nr = 801, Nq = Nr)
     return r_mat, qgrid
 end
 
-function get_yields_itp(dd::Default, Nr = 801, Nq = Nr)
+function get_yields_itp(dd::Default, Nr = 400, Nq = 800)
 
     r_mat, qgrid = get_yields(dd, Nr, Nq)
     itp_yield = interpolate((qgrid, dd.gr[:y]), r_mat, Gridded(Linear()))
