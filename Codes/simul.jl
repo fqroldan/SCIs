@@ -64,7 +64,7 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     return v, def_p, ct, bp, yp, new_def, q, spread
 end
 
-function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35, separation = 4, stopdef = true)
+function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35, separation = 4, stopdef = true)
 
     cd_sep = cond_defs + separation
     
@@ -72,8 +72,6 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
     ξmat = rand(Tmax, K)
 
     pv = Vector{SimulPath}(undef, K)
-
-    itp_yield = get_yields_itp(dd)
     
     knots = (dd.gr[:b], dd.gr[:y])
     itp_R = interpolate(knots, dd.v[:R], Gridded(Linear()))
@@ -99,7 +97,7 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
         ϵvec = ϵmat[:, jp]
         ξvec = ξmat[:, jp]
     
-        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp])
+        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp, :acc])
     
         contflag = true
     
@@ -115,6 +113,10 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
     
             pp[:ζ, t] = ifelse(def, 2, 1)
             pp[:def, t] = ifelse(new_def, 1, 0)
+            pp[:acc, t] = 0
+            if new_def || !def
+                pp[:acc, t] = 1
+            end
     
             pp[:v, t] = itp_v(b0, y0)
     
@@ -137,9 +139,11 @@ function simulvec(dd::DebtMod, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35
         else
             pv[jp] = subpath(pp, 1+burn_in, Tmax)
         end
-    end    
+    end
     return pv
 end
+
+compute_defprob(pv) = 100 * mean( 1-(1-sum(pp[:def])/sum(pp[:acc]))^4 for pp in pv )
 
 function compute_moments(pv::Vector{SimulPath})
 
@@ -147,7 +151,7 @@ function compute_moments(pv::Vector{SimulPath})
 
     ## measure in basis points, already annualized
     moments[:mean_spr] = mean(mean(pp[:spread]) * 1e4 for pp in pv)
-    moments[:mean_sp]  = mean(mean(pp[:sp]) * 1e4 for pp in pv)
+    moments[:mean_sp]  = mean(mean(pp[:sp]) * 1e4 for pp in pv) # this only works if κ = r+ρ
     moments[:std_spr]  = mean(std(pp[:spread].*1e4) for pp in pv)
 
     # Compare debt to annual GDP
@@ -164,7 +168,18 @@ function compute_moments(pv::Vector{SimulPath})
     return moments
 end
 
-calib_targets() = targets_PP_OG()
+get_targets() = targets_CE()
+
+targets_CE() = Dict{Symbol, Float64}(
+    :mean_spr => 815,
+    :std_spr => 443,
+    :debt_gdp => 17.4,
+    :def_prob => 3,
+    :rel_vol => 0.87,
+    :corr_yc => 0.97,
+    :corr_ytb => -0.77,
+    :corr_ysp => -0.72,
+)
 
 targets_HMR() = Dict{Symbol, Float64}(
     :mean_spr => 744,
@@ -225,15 +240,17 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
 
     syms = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
 
-    targets = calib_targets()
+    targets = get_targets()
 
     moments = compute_moments(pv)
-    moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+    # moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+    # moments[:def_prob] = mean(sum(pp[:def]) / (horizon(pp) / 4) * 100 for pp in pv_uncond)
+    moments[:def_prob] = compute_defprob(pv_uncond)
 
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
-    freq_q = 100*mean(mean(p[:q] .<= min_q + 0.01) for p in pv)
+    freq_q = 100*mean(mean(p[:q] .<= min_q) for p in pv)
 
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
@@ -264,16 +281,17 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
     # :mean_sp,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
-    targets = calib_targets()
+    targets = get_targets()
 
     moments = compute_moments(pv)
     # Number of defaults divided total periods with market access (ζ = 1)
-    moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+    moments[:def_prob] = compute_defprob(pv_uncond)
+
     # moments[:mean_spr] = mean(mean(pp[:spread]) for pp in pv_uncond) * 1e4
 
     if length(pv_RE) > 0
         moments_RE = compute_moments(pv_RE)
-        moments_RE[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond_RE)
+        moments_RE[:def_prob] = compute_defprob(pv_uncond_RE)
         # moments[:mean_spr] = mean(mean(pp[:spread]) for pp in pv_uncond_RE) * 1e4
     end
 
@@ -311,8 +329,10 @@ end
 function simul_table(dd::DebtMod, K = 1_000; kwargs...)
     Random.seed!(25)
 
-    pv_uncond = simulvec(dd, 2_000, burn_in=2_000, Tmax=4_000, stopdef=false)
-    pv = simulvec(dd, K)
+    itp_yield = get_yields_itp(dd)
+
+    pv_uncond = simulvec(dd, itp_yield, 2_000, burn_in=2_000, Tmax=4_000, stopdef=false)
+    pv = simulvec(dd, itp_yield, K)
 
     table_moments(pv, pv_uncond; kwargs...)
 end
@@ -320,21 +340,23 @@ end
 function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false), smalltable=false)
     min_q = dd.pars[:min_q]
     
-    targets = calib_targets()
+    targets = get_targets()
 
     # keys = [:mean_spr,
     # # :mean_sp,
     # :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
     keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
-
     Random.seed!(25)
-    pv_uncond = simulvec(dd, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false);
+    
+    itp_yield = get_yields_itp(dd)
+    
+    pv_uncond = simulvec(dd, itp_yield, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false);
 
-    pv = simulvec(dd, cond_K);
+    pv = simulvec(dd, itp_yield, cond_K);
 
     moments = compute_moments(pv)
-    moments[:def_prob] = mean(sum(pp[:def]) / max(sum(pp[:ζ].==1) / 4,0.25) * 100 for pp in pv_uncond)
+    moments[:def_prob] = compute_defprob(pv_uncond)
 
     targets_vec = [targets[key] for key in keys]
     moments_vec = [moments[key] for key in keys]
@@ -355,11 +377,14 @@ end
 
 function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
 
-    pv_uncond = simulvec(dd, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
-    pv = simulvec(dd, K)
+    itp_yield = get_yields_itp(dd)
+    pv_uncond = simulvec(dd, itp_yield, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
+    pv = simulvec(dd, itp_yield, K)
 
-    pv_uncond_RE = simulvec(dd_RE, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
-    pv_RE = simulvec(dd_RE, K)
+    itp_yield_RE = get_yields_itp(dd_RE)
+
+    pv_uncond_RE = simulvec(dd_RE, itp_yield_RE, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
+    pv_RE = simulvec(dd_RE, itp_yield_RE, K)
 
     table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
 end
@@ -380,7 +405,7 @@ function update_dd!(dd::DebtMod, params::Dict)
     end
 end
 
-function calibrate(dd::DebtMod, targets=calib_targets(); factor=0.1,
+function calibrate(dd::DebtMod, targets=get_targets(); factor=0.1,
     minβ=1 / (1 + 0.15),
     mind1=-0.5,
     mind2=0.2,
@@ -450,7 +475,7 @@ calib_close(dd::DebtMod; factor = 0.1) = calibrate(dd; factor = 0.1,
 # Trying with (β, d1, d2, θ) = (0.946, -0.206, 0.255, 0.669): ✓ (461) v = 17.4
 
 #= This one goes instantly to one of the edges ??
-function calibrate_SA(dd::DebtMod, targets = calib_targets();
+function calibrate_SA(dd::DebtMod, targets = get_targets();
     minβ = 1/(1+0.1),
     mind1 = -0.5,
     mind2 = 0.2,
@@ -885,23 +910,22 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500, tol = 1e-6, 
-    σβ = 0.0005, σθ = 0.01, σ1 = 0.001, σ2 = 0.0002)
-    
+    σβ = 0.00025, σθ = 0.005, σ1 = 0.00005, σ2 = 0.00005)
+
     update_dd!(dd, best_p)
 
     σvec = [σβ, σθ, σ1, σ2]
     names = [:β, :θ, :d1, :d2]
     Nxs = [5,5,5,5]
-    
+
     curr_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ))
     W = Inf
 
     iter = 0
     while iter < maxiter
+        js = 1 + (iter % length(names))
+        
         iter += 1
-
-        js = iter % length(names)
-        js == 0 ? js = length(names) : nothing
 
         key = names[js]
         σ = σvec[js]/2
@@ -910,9 +934,9 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
 
         print("Iteration $iter at $(Dates.format(now(), "HH:MM")). Moving $key from $(curr_p)\n")
         xopt, jopt, w, x_og = iter_Sobol(dd, key, σ, tol, Nx=Nx)
-        
+
         print("\nBest objective: $(@sprintf("%0.3g", w)) at $key [$jopt] = $(@sprintf("%0.5g", xopt)) in [$(@sprintf("%0.5g", x_og-σ)), $(@sprintf("%0.5g", x_og+σ))]. ")
-        
+
         setval!(curr_p, key, xopt)
         mpe!(dd, min_iter = 25, maxiter = 1_000, tol = tol, tinyreport = true)
 
@@ -923,20 +947,20 @@ function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in 
             end
         end
         print("Best so far $(@sprintf("%0.3g", W))\n")
-        
+
         update_dd!(dd, curr_p)
     end
 end
 
-function mpe_simul!(dd::DebtMod; K = 6, min_iter = 25, maxiter = 600, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul, tinyrep = false, simultable=true)
-    
+function mpe_simul!(dd::DebtMod; K = 3, min_iter = 25, maxiter = 600, tol = 1e-6, simul = true, cond_K = 7_500, uncond_K = 10_000, initialrep = simul, simultable=true)
+
     initialrep && print("Solving with (β, d1, d2, θ) = ($(@sprintf("%0.4g", dd.pars[:β])), $(@sprintf("%0.4g", dd.pars[:d1])), $(@sprintf("%0.4g", dd.pars[:d2])), $(@sprintf("%0.4g", dd.pars[:θ])))\n")
 
     for _ in 1:K
         mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, tinyreport = true)
     end
 
-    mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false, tinyreport = tinyrep)
+    initialrep && mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false)
 
     if simul
         w,t,m=calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=simultable);
