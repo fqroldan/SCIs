@@ -51,7 +51,7 @@ function Default(;
     βL = 1/(1+r)
     wL = 1
 
-    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL, :min_q => min_q)
+    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL, :min_q => min_q, :Nb => Nb, :Ny => Ny, :bmax => bmax, :std_devs => std_devs)
 
     ychain = tauchen(Ny, ρy, σy, 0, std_devs)
 
@@ -75,6 +75,10 @@ function Default(;
 
     return Default(pars, gr, P, v, vL, gc, gb, q, qD)
 end
+
+info(dd::DebtMod) = Dict(
+    key => dd.pars[key] for key in (:β, :θ, :d1, :d2, :α, :τ, :χ, :κ, :Nb, :Ny, :bmax, :std_devs) if haskey(dd.pars, key)
+)
 
 cons_equiv(v::Number, dd::DebtMod) = cons_equiv(v, dd.pars[:β], dd.pars[:γ])
 cons_equiv(v::Number, β::Number, γ::Number) = (v * (1-β) * (1-γ))^(1/(1-γ))
@@ -127,7 +131,7 @@ function coupon_rate(yv, dd::DebtMod)
         return 0.0
     end
 end
-
+c = 1.015725020524464
 function budget_constraint(bpv, bv, yv, q, dd::DebtMod)
     ρ = dd.pars[:ρ]
 
