@@ -67,7 +67,7 @@ end
 function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35, separation = 4, stopdef = true)
 
     cd_sep = cond_defs + separation
-    
+
     ϵmat = rand(Normal(0,1), Tmax, K)
     ξmat = rand(Tmax, K)
 
@@ -91,49 +91,49 @@ function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, con
         y0 = mean(dd.gr[:y])
         def = false
         new_def = false
-    
+
         min_y, max_y = extrema(dd.gr[:y])
 
         ϵvec = ϵmat[:, jp]
         ξvec = ξmat[:, jp]
-    
+
         pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp, :acc])
-    
+
         contflag = true
-    
+
         t = 0
         while contflag && t < Tmax
             t += 1
 
             ϵv = ϵvec[t]
             ξv = ξvec[t]
-    
+
             pp[:y, t] = y0
             pp[:b, t] = b0
-    
+
             pp[:ζ, t] = ifelse(def, 2, 1)
             pp[:def, t] = ifelse(new_def, 1, 0)
             pp[:acc, t] = 0
             if new_def || !def
                 pp[:acc, t] = 1
             end
-    
+
             pp[:v, t] = itp_v(b0, y0)
-    
+
             v, def, ct, b0, y0, new_def, q, spread = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y)
-    
+
             pp[:v_cond, t] = v
-    
+
             pp[:q, t] = q
             pp[:spread, t] = (1+spread)^4 - 1 ## annualized
             pp[:sp, t] = (1+get_spread(q, dd))^4 - 1
             pp[:c, t] = ct
-    
+
             if stopdef && t >= burn_in + cd_sep && pp[:ζ, t] == 2 && maximum(pp[:ζ, jj] for jj in t-cd_sep+1:t-1) == 1
                 contflag = false
             end
         end
-        
+
         if stopdef
             pv[jp] = subpath(pp, t - cond_defs + 1, t)
         else
@@ -144,6 +144,8 @@ function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, con
 end
 
 compute_defprob(pv) = 100 * mean( 1-(1-sum(pp[:def])/sum(pp[:acc]))^4 for pp in pv )
+# compute_defprob(pv) = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
+# compute_defprob(pv) = mean(sum(pp[:def]) / (horizon(pp) / 4) * 100 for pp in pv_uncond)
 
 function compute_moments(pv::Vector{SimulPath})
 
@@ -174,7 +176,8 @@ targets_CE() = Dict{Symbol, Float64}(
     :mean_spr => 815,
     :std_spr => 443,
     :debt_gdp => 17.4,
-    :def_prob => 3,
+    # :def_prob => 3,
+    :def_prob => 5.4,
     :rel_vol => 0.87,
     :corr_yc => 0.97,
     :corr_ytb => -0.77,
@@ -243,8 +246,6 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
     targets = get_targets()
 
     moments = compute_moments(pv)
-    # moments[:def_prob] = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
-    # moments[:def_prob] = mean(sum(pp[:def]) / (horizon(pp) / 4) * 100 for pp in pv_uncond)
     moments[:def_prob] = compute_defprob(pv_uncond)
 
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
@@ -348,9 +349,9 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
 
     keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
     Random.seed!(25)
-    
+
     itp_yield = get_yields_itp(dd)
-    
+
     pv_uncond = simulvec(dd, itp_yield, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false);
 
     pv = simulvec(dd, itp_yield, cond_K);
@@ -910,7 +911,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500, tol = 1e-6, 
-    σβ = 0.00025, σθ = 0.005, σ1 = 0.00005, σ2 = 0.00005)
+    σβ = 0.00025, σθ = 0.005, σ1 = 0.00025, σ2 = 0.00025)
 
     update_dd!(dd, best_p)
 
