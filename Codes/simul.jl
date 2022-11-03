@@ -64,12 +64,12 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     return v, def_p, ct, bp, yp, new_def, q, spread
 end
 
-function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, cond_defs = 35, separation = 4, stopdef = true)
+function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true)
 
     cd_sep = cond_defs + separation
 
-    ϵmat = rand(Normal(0,1), Tmax, K)
-    ξmat = rand(Tmax, K)
+    @assert length(ϵvv) == length(ξvv)
+    K = length(ϵvv)
 
     pv = Vector{SimulPath}(undef, K)
     
@@ -94,9 +94,10 @@ function simulvec(dd::DebtMod, itp_yield, K; burn_in=200, Tmax=10 * burn_in, con
 
         min_y, max_y = extrema(dd.gr[:y])
 
-        ϵvec = ϵmat[:, jp]
-        ξvec = ξmat[:, jp]
+        ϵvec = ϵvv[jp]
+        ξvec = ξvv[jp]
 
+        Tmax = length(ϵvv)
         pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp, :acc])
 
         contflag = true
@@ -327,18 +328,28 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
     nothing
 end
 
-function simul_table(dd::DebtMod, K = 1_000; kwargs...)
-    Random.seed!(25)
+# function simul_table(dd::DebtMod, K = 1_000; kwargs...)
+#     Random.seed!(25)
 
-    itp_yield = get_yields_itp(dd)
+#     itp_yield = get_yields_itp(dd)
 
-    pv_uncond = simulvec(dd, itp_yield, 2_000, burn_in=2_000, Tmax=4_000, stopdef=false)
-    pv = simulvec(dd, itp_yield, K)
+#     ϵvv_unc, ξvv_unc = simulshocks(4_000, 2_000)
+#     ϵvv, ξvv = simulshocks(2_000, K)
+    
+#     pv_uncond = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=2_000, stopdef=false)
+#     pv = simulvec(dd, itp_yield, ϵvv, ξvv)
 
-    table_moments(pv, pv_uncond; kwargs...)
+#     table_moments(pv, pv_uncond; kwargs...)
+# end
+
+function simulshocks(T, K)
+    ϵvv = [rand(Normal(0,1), T) for _ in 1:K]
+    ξvv = [rand(T) for _ in 1:K]
+
+    return ϵvv, ξvv
 end
 
-function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, savetable=false, showtable=(savetable||false), smalltable=false)
+function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, cond_T = 2000, savetable=false, showtable=(savetable||false), smalltable=false)
     min_q = dd.pars[:min_q]
     
     targets = get_targets()
@@ -350,11 +361,13 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
     Random.seed!(25)
 
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
     itp_yield = get_yields_itp(dd)
 
-    pv_uncond = simulvec(dd, itp_yield, uncond_K, burn_in=uncond_burn, Tmax=uncond_T, stopdef=false);
+    pv_uncond = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false);
 
-    pv = simulvec(dd, itp_yield, cond_K);
+    ϵvv, ξvv = simulshocks(cond_T, cond_K)
+    pv = simulvec(dd, itp_yield, ϵvv, ξvv);
 
     moments = compute_moments(pv)
     moments[:def_prob] = compute_defprob(pv_uncond)
@@ -376,19 +389,19 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     objective, targets_vec, moments_vec#, dict
 end
 
-function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
+# function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
 
-    itp_yield = get_yields_itp(dd)
-    pv_uncond = simulvec(dd, itp_yield, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
-    pv = simulvec(dd, itp_yield, K)
+#     itp_yield = get_yields_itp(dd)
+#     pv_uncond = simulvec(dd, itp_yield, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
+#     pv = simulvec(dd, itp_yield, K)
 
-    itp_yield_RE = get_yields_itp(dd_RE)
+#     itp_yield_RE = get_yields_itp(dd_RE)
 
-    pv_uncond_RE = simulvec(dd_RE, itp_yield_RE, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
-    pv_RE = simulvec(dd_RE, itp_yield_RE, K)
+#     pv_uncond_RE = simulvec(dd_RE, itp_yield_RE, 2_000, burn_in = 2_000, Tmax = 4_000, stopdef=false)
+#     pv_RE = simulvec(dd_RE, itp_yield_RE, K)
 
-    table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
-end
+#     table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
+# end
 
 function solve_eval_α(dd::DebtMod, α)
     dd.pars[:α] = α
