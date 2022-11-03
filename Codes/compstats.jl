@@ -15,7 +15,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     dd.pars[:α] = 1
     dd.pars[:min_q] = 0
 
-    mpe_simul!(dd, maxiter=500, K=8, initialrep=false, simul=othersimuls)
+    mpe_simul!(dd, maxiter=500, K=8, simul=othersimuls)
 
     v_linear = dd.v[:V][1, ceil(Int, Ny / 2)]
     c_linear = cons_equiv(v_linear, dd)
@@ -28,8 +28,9 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     end
 
     dd.pars[:τ] = 1
+    dd.gr[:b] = collect(range(0,2*maximum(dd.gr[:b]), length=length(dd.gr[:b])));
 
-    mpe_simul!(dd, maxiter=500, K=8, initialrep=false, simul=othersimuls)
+    mpe_simul!(dd, maxiter=500, K=8, simul=othersimuls)
 
     v_threshold = dd.v[:V][1, ceil(Int, Ny / 2)]
     c_threshold = cons_equiv(v_threshold, dd)
