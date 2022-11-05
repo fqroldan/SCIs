@@ -1,7 +1,11 @@
 function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=false)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
-    mpe_simul!(dd, maxiter=500, K=8, simul=show_simul)
+    mpe_simul!(dd, maxiter=500, K=8, simul=false)
+
+    Random.seed!(25)
+    w, t, m, ϵvv, ξvv = calib_targets(dd, cond_K=7_500, uncond_K=10_000, smalltable=true)
+
 
     Ny = length(dd.gr[:y])
     v_noncont = dd.v[:V][1, ceil(Int, Ny / 2)]
@@ -15,7 +19,8 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     dd.pars[:α] = 1
     dd.pars[:min_q] = 0
 
-    mpe_simul!(dd, maxiter=500, K=8, simul=othersimuls)
+    mpe_simul!(dd, maxiter=500, K=8, simul=false)
+    calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=true)
 
     v_linear = dd.v[:V][1, ceil(Int, Ny / 2)]
     c_linear = cons_equiv(v_linear, dd)
@@ -28,9 +33,10 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     end
 
     dd.pars[:τ] = 1
-    dd.gr[:b] = collect(range(0,2*maximum(dd.gr[:b]), length=length(dd.gr[:b])));
+    dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
 
-    mpe_simul!(dd, maxiter=500, K=8, simul=othersimuls)
+    mpe_simul!(dd, maxiter=500, K=8, simul=false)
+    calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=true)
 
     v_threshold = dd.v[:V][1, ceil(Int, Ny / 2)]
     c_threshold = cons_equiv(v_threshold, dd)
