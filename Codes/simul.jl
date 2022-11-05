@@ -97,7 +97,7 @@ function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 3
         ϵvec = ϵvv[jp]
         ξvec = ξvv[jp]
 
-        Tmax = length(ϵvv)
+        Tmax = length(ϵvec)
         pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp, :acc])
 
         contflag = true
@@ -135,13 +135,15 @@ function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 3
             end
         end
 
+        ϵvv[jp] = ϵvv[jp][1:t]
+        ξvv[jp] = ξvv[jp][1:t]
         if stopdef
             pv[jp] = subpath(pp, t - cond_defs + 1, t)
         else
             pv[jp] = subpath(pp, 1+burn_in, Tmax)
         end
     end
-    return pv
+    return pv, ϵvv, ξvv
 end
 
 compute_defprob(pv) = 100 * mean( 1-(1-sum(pp[:def])/sum(pp[:acc]))^4 for pp in pv )
@@ -239,8 +241,7 @@ function targets_PP()
 end
 
 
-
-function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q)
+function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
 
     syms = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
 
@@ -252,7 +253,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
-    freq_q = 100*mean(mean(p[:q] .<= min_q) for p in pv)
+    # freq_q = 100*mean(mean(p[:q] .<= min_q) for p in pv)
 
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
@@ -271,7 +272,7 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, min_q
         table *= ("\n")
     end
 
-    table *= "Freq. at min_q = $(@sprintf("%0.3g", freq_q))%\n"
+    # table *= "Freq. at min_q = $(@sprintf("%0.3g", freq_q))%\n"
 
     print(table)
     nothing
@@ -349,25 +350,9 @@ function simulshocks(T, K)
     return ϵvv, ξvv
 end
 
-function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_burn = 2_000, uncond_T = 4_000, cond_T = 2000, savetable=false, showtable=(savetable||false), smalltable=false)
-    min_q = dd.pars[:min_q]
-    
+function eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
     targets = get_targets()
-
-    # keys = [:mean_spr,
-    # # :mean_sp,
-    # :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
-
     keys = [:mean_spr, :std_spr, :debt_gdp, :def_prob]
-    Random.seed!(25)
-
-    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
-    itp_yield = get_yields_itp(dd)
-
-    pv_uncond = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false);
-
-    ϵvv, ξvv = simulshocks(cond_T, cond_K)
-    pv = simulvec(dd, itp_yield, ϵvv, ξvv);
 
     moments = compute_moments(pv)
     moments[:def_prob] = compute_defprob(pv_uncond)
@@ -376,17 +361,50 @@ function calib_targets(dd::DebtMod; cond_K = 1_000, uncond_K = 2_000 , uncond_bu
     moments_vec = [moments[key] for key in keys]
 
     W = diagm(ones(4))
-    # W[2,2] = 1 # More weight on std dev of spread
+    W[2,2] = 0.75 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
-    !showtable && smalltable && table_during(pv, pv_uncond, min_q)
-
-    # names = [:sp, :std, :debt, :def]
-    # indices= [1, 2, 3, 8]
-    # dict = Dict(name => targets_vec[indices[jj]]-moments_vec[indices[jj]] for (jj, name) in enumerate(names))
+    !showtable && smalltable && table_during(pv, pv_uncond)
 
     objective = (moments_vec ./ targets_vec .- 1)' * W * (moments_vec ./ targets_vec .- 1)
     objective, targets_vec, moments_vec#, dict
+end
+
+function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, savetable=false, showtable=(savetable || false), smalltable=false)
+
+    Random.seed!(25)
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
+
+    itp_yield = get_yields_itp(dd)
+
+    pv_uncond, _ = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
+
+    pv, ϵvv = simulvec(dd, itp_yield, ϵvv, ξvv)
+
+    objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
+
+    objective, targets_vec, moments_vec
+end
+
+function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, savetable=false, showtable=(savetable || false), smalltable=false)
+
+    # keys = [:mean_spr,
+    # # :mean_sp,
+    # :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
+
+    Random.seed!(25)
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
+    ϵvv, ξvv = simulshocks(cond_T, cond_K)
+
+    itp_yield = get_yields_itp(dd)
+
+    pv_uncond, _ = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
+
+    pv, ϵvv, ξvv = simulvec(dd, itp_yield, ϵvv, ξvv)
+
+    objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
+
+    objective, targets_vec, moments_vec, ϵvv, ξvv
 end
 
 # function simul_table(dd::DebtMod, dd_RE::DebtMod, K = 1_000; kwargs...)
@@ -450,7 +468,7 @@ function calibrate(dd::DebtMod, targets=get_targets(); factor=0.1,
 
         mpe!(dd, min_iter=25, maxiter = 1_250, tol=1e-6, tinyreport=true)
 
-        w, t, m = calib_targets(dd, smalltable=false, cond_K=7_500, uncond_K=10_000)
+        w, t, m, _, _ = calib_targets(dd, smalltable=false, cond_K=7_500, uncond_K=10_000)
         print("v = $(@sprintf("%0.3g", 100*w))\n")
         return w
     end
@@ -924,7 +942,7 @@ end
 
 function pseudoSobol!(dd::DebtMod, best_p = Dict(key => dd.pars[key] for key in (:β, :d1, :d2, :θ));
     maxiter = 500, tol = 1e-6, 
-    σβ = 0.00025, σθ = 0.005, σ1 = 0.00025, σ2 = 0.00025)
+    σβ = 0.0005, σθ = 0.01, σ1 = 0.0005, σ2 = 0.0005)
 
     update_dd!(dd, best_p)
 
@@ -977,7 +995,7 @@ function mpe_simul!(dd::DebtMod; K = 3, min_iter = 25, maxiter = 600, tol = 1e-6
     initialrep && mpe!(dd, min_iter = min_iter, maxiter = maxiter, tol = tol, verbose = false)
 
     if simul
-        w,t,m=calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=simultable);
+        w,t,m,_, _ = calib_targets(dd, cond_K = cond_K, uncond_K = uncond_K, smalltable=simultable);
         return 100w
     end
 end
