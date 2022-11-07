@@ -131,7 +131,7 @@ function coupon_rate(yv, dd::DebtMod)
         return 0.0
     end
 end
-c = 1.015725020524464
+
 function budget_constraint(bpv, bv, yv, q, dd::DebtMod)
     ρ = dd.pars[:ρ]
 
