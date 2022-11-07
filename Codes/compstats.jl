@@ -8,7 +8,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
 
 
     Ny = length(dd.gr[:y])
-    v_noncont = dd.v[:V][1, ceil(Int, Ny / 2)]
+    v_noncont = welfare(dd)
     c_noncont = cons_equiv(v_noncont, dd)
     print("V with noncont: $v_noncont, c = $c_noncont\n")
 
@@ -22,7 +22,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     mpe_simul!(dd, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=true)
 
-    v_linear = dd.v[:V][1, ceil(Int, Ny / 2)]
+    v_linear = welfare(dd)
     c_linear = cons_equiv(v_linear, dd)
     print("V with linear: $v_linear, c = $c_linear. ")
     gains_linear = c_linear / c_noncont - 1
@@ -38,7 +38,7 @@ function comp_argbond(dd::DebtMod; show_simul=false, othersimuls=false, DEP=fals
     mpe_simul!(dd, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=true)
 
-    v_threshold = dd.v[:V][1, ceil(Int, Ny / 2)]
+    v_threshold = welfare(dd)
     c_threshold = cons_equiv(v_threshold, dd)
     print("V with threshold: $v_threshold, c = $c_threshold. ")
     gains_threshold = c_threshold / c_noncont - 1
@@ -73,3 +73,50 @@ function DEP_bylength(dd::DebtMod, Yvec = range(10, 60, length=6))
         print("DEP computed on $year years ($(4year) periods): $(@sprintf("%0.3g", 100*DEP))%\n")
     end
 end
+
+function try_all_SCIs(dd::DebtMod; Nτ = 15)
+    @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+
+    αvec = 0:0.5:10
+    Nα = length(αvec)
+    τvec = range(minimum(dd.gr[:y]), mean(dd.gr[:y]), length=Nτ)
+
+    Vs = zeros(Nα, Nτ)
+    Cs = zeros(Nα, Nτ)
+
+    N = length(Vs)
+    n = 0
+    print("Starting evaluation of all SCIs. ")
+    c_baseline = 0.
+    c_star, α_star, τ_star = -Inf, 0., 0.
+
+
+    for (jα, αv) in enumerate(αvec), (jτ, τv) in enumerate(τvec)
+        n += 1
+        dd.pars[:α] = αv
+        dd.pars[:τ] = τv
+        print("Solving with α = $αv, τ = $(@sprintf("%0.3g", τv)) ($n/$N) at $(Dates.format(now(), "HH:MM"))\n")
+
+        mpe_simul!(dd, maxiter=500, K=8, simul=false)
+        v = welfare(dd)
+        c = cons_equiv(v, dd)
+        if n == 1
+            c_baseline = c
+        end
+        if c > c_star
+            c_star = c
+            α_star = αv
+            τ_star = τv
+        end
+
+        print("Cons equiv: $(@sprintf("%0.3g", c)), $(@sprintf("%0.3g", 100*(c/c_baseline-1)))% from baseline \n")
+        print("Best so far $(@sprintf("%0.3g", c_star)) with (α, τ) = ($(@sprintf("%0.3g", α_star)), $(@sprintf("%0.3g", τ_star)))\n")
+        Vs[jα, jτ] = v
+        Cs[jα, jτ] = c
+    end
+
+    return Vs, Cs
+end
+
+welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
+## _v4 has very good everything (19% DEP with threshold) but a bit high def prob in baseline.

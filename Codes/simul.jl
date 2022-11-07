@@ -23,6 +23,14 @@ Base.setindex!(pp::SimulPath, x::Real, s::Symbol, j::Int64) = (pp.data[j, pp.nam
 
 subpath(pp::SimulPath, t0, t1) = SimulPath(pp.names, pp.data[t0:t1, :])
 
+function stationary_distribution(dd::DebtMod)
+    Ny, ρy, σy, std_devs = (dd.pars[key] for key in (:Ny, :ρy, :σy, :std_devs))
+
+    mc = tauchen(Int(Ny), ρy, σy, 0, Int(std_devs))
+
+    stationary_distributions(mc)[1]
+end
+
 
 function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, pars::Dict, min_y, max_y)
     ρy, σy, ψ, ℏ, r = (pars[sym] for sym in (:ρy, :σy, :ψ, :ℏ, :r))
