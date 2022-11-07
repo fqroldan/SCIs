@@ -89,7 +89,9 @@ function try_all_SCIs(dd::DebtMod; Nτ = 15)
     print("Starting evaluation of all SCIs. ")
     c_baseline = 0.
     c_star, α_star, τ_star = -Inf, 0., 0.
+    c_gain_star = 0.
 
+    dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
 
     for (jα, αv) in enumerate(αvec), (jτ, τv) in enumerate(τvec)
         n += 1
@@ -97,25 +99,35 @@ function try_all_SCIs(dd::DebtMod; Nτ = 15)
         dd.pars[:τ] = τv
         print("Solving with α = $αv, τ = $(@sprintf("%0.3g", τv)) ($n/$N) at $(Dates.format(now(), "HH:MM"))\n")
 
-        mpe_simul!(dd, maxiter=500, K=8, simul=false)
+        mpe_simul!(dd, maxiter=500, K=4, tol = 2.5e-6, simul=false)
         v = welfare(dd)
         c = cons_equiv(v, dd)
         if n == 1
             c_baseline = c
         end
+        c_gain = 100*(c/c_baseline-1)
         if c > c_star
             c_star = c
             α_star = αv
             τ_star = τv
+            c_gain_star = c_gain
         end
 
-        print("Cons equiv: $(@sprintf("%0.3g", c)), $(@sprintf("%0.3g", 100*(c/c_baseline-1)))% from baseline \n")
-        print("Best so far $(@sprintf("%0.3g", c_star)) with (α, τ) = ($(@sprintf("%0.3g", α_star)), $(@sprintf("%0.3g", τ_star)))\n")
+        print("Cons equiv: $(@sprintf("%0.3g", c)), $(@sprintf("%0.3g", c_gain))% from baseline \n")
+        print("Best so far $(@sprintf("%0.3g", c_gain_star))% with (α, τ) = ($(@sprintf("%0.3g", α_star)), $(@sprintf("%0.3g", τ_star)))\n")
         Vs[jα, jτ] = v
         Cs[jα, jτ] = c
     end
 
-    return Vs, Cs
+    return Vs, Cs, αvec, τvec
+end
+
+function save_all_SCIs(dd::DebtMod)
+    Vs, Cs, αvec, τvec = try_all_SCIs(dd)
+
+    h = dd.pars[:ℏ]
+
+    save("comp_alphatau_h$h.jld2", "V", V, "C", C, "αvec", αvec, "τvec", τvec)
 end
 
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
