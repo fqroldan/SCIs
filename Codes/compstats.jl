@@ -123,11 +123,12 @@ function try_all_SCIs(dd::DebtMod; Nτ = 15)
 end
 
 function save_all_SCIs(dd::DebtMod)
-    Vs, Cs, αvec, τvec = try_all_SCIs(dd)
+    V, C, αvec, τvec = try_all_SCIs(dd)
 
+    dd.pars[:θ] == 0 ? rob = "RE" : rob = "rob"
     h = dd.pars[:ℏ]
 
-    save("comp_alphatau_h$h.jld2", "V", V, "C", C, "αvec", αvec, "τvec", τvec)
+    save("comp_alphatau_h$(h)_$rob.jld2", "V", V, "C", C, "αvec", αvec, "τvec", τvec)
 end
 
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
