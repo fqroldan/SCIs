@@ -133,3 +133,31 @@ end
 
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
 ## _v4 has very good everything (19% DEP with threshold) but a bit high def prob in baseline.
+
+function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
+
+    fy = stationary_distribution(dd)
+
+    R_RE = (dd.gr[:y].>= τRE) .* (max.(0, 1 .+ αRE * (dd.gr[:y] .- 1)))
+    R_Rob = (dd.gr[:y].>= τ1) .* (max.(0, 1 .+ α1 * (dd.gr[:y] .- 1)))
+
+    println(typeof(R_RE))
+    max_R = max(maximum(R_RE), maximum(R_Rob))
+
+    lines = [
+        scatter(x=dd.gr[:y], y=R_RE, name = "RE")
+        scatter(x=dd.gr[:y], y=R_Rob, name = "Robustness")
+        bar(x=dd.gr[:y], y = fy ./ maximum(fy) .* max_R, opacity=0.25, name = "Ergodic dist")
+    ]
+
+    plot(
+        lines,
+        Layout(
+            title="Optimal bond structure", xaxis_title="<i>y",
+            font="Lato", fontsize=18,
+            xaxis = attr(showgrid = true, gridcolor="#e9e9e9", gridwidth=0.5, zeroline=false),
+            yaxis = attr(showgrid = true, gridcolor="#e9e9e9", gridwidth=0.5, zeroline=false),
+            legend=attr(orientation="h", x=0.05, xanchor="left")
+        )
+    )
+end

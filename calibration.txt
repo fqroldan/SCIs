@@ -1,19 +1,5 @@
 No recovery
-julia> info(dd)
-Dict{Symbol, Float64} with 12 entries:
-  :α        => 1.0
-  :d2       => 0.301812
-  :d1       => -0.24085
-  :χ        => 0.025
-  :Nb       => 200.0
-  :bmax     => 1.5
-  :β        => 0.950388
-  :θ        => 2.1505
-  :std_devs => 3.0
-  :Ny       => 91.0
-  :τ        => 1.0
-  :κ        => 0.0785
-Calibration targets
+Saved as dd_h1.jld2, "dd"
                Data      Model     Contrib.                  
 Spread         815       835       0.0633    
 Std Spread     443       368       2.87      
@@ -52,7 +38,6 @@ DEP computed on 50 years (200 periods): 16.2%
 DEP computed on 60 years (240 periods): 14.3%
 Gains with threshold = -1.16%
 
-
 Same with Rational Expectations
                Data      Model     Contrib.  
 Spread         815       894       0.932     
@@ -74,9 +59,9 @@ Debt-to-GDP    17.4      33.2      82
 Default Prob   3         2.17      7.64      
 Gains with threshold = 0.808%
 
-Saved as dd_h1.jld2, "dd"
 
 With recovery (h=40%)
+Saved as dd_h04.jld2, "dd"
                Data      Model     Contrib.  
 Spread         815       752       0.606     
 Std Spread     443       459       0.135
@@ -103,6 +88,8 @@ DEP computed on 40 years (160 periods): 23.2%
 DEP computed on 50 years (200 periods): 21%
 DEP computed on 60 years (240 periods): 19.2%
 
+-- optimal bond: (α, τ) = (3, 0.879)
+
 Solving same model with rational expectations
                Data      Model     Contrib.  
 Spread         815       844       0.125     
@@ -114,5 +101,3 @@ Gains with linear = 0.205%
 Gains with threshold = 1.31%
 
 -- optimal bond: (α, τ) = (6.5, 0.828)
-
-Saved as dd_h04.jld2, "dd"
