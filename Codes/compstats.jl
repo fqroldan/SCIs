@@ -155,7 +155,8 @@ function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
         Layout(
             title="Optimal bond structure", xaxis_title="<i>y",
             font="Lato", fontsize=18,
-            yaxis_zeroline=false,
+            xaxis = attr(showgrid = true, gridcolor="#e9e9e9", gridwidth=0.5, zeroline=false),
+            yaxis = attr(showgrid = true, gridcolor="#e9e9e9", gridwidth=0.5, zeroline=false),
             legend=attr(orientation="h", x=0.05, xanchor="left")
         )
     )
