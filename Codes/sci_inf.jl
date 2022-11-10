@@ -121,8 +121,8 @@ end
 cons_in_default(yv, dd::DebtMod) = cons_in_default(yv, dd.pars[:d1], dd.pars[:d2])
 cons_in_default(yv, d1::Number, d2::Number) = yv - max(0, d1 * yv + d2 * yv^2)
 
-function coupon_rate(yv, dd::DebtMod)
-    α, τ, κ = (dd.pars[sym] for sym in (:α, :τ, :κ))
+function coupon_rate(yv, dd::DebtMod; α = dd.pars[:α], τ = dd.pars[:τ])
+    κ = dd.pars[:κ]
 
     linear_coup = 1 + α * (yv-1)
     if yv >= τ
@@ -386,17 +386,17 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
     return vL
 end
 
-function v_lender_iter!(dd::Default)
-    itp_q = make_itp(dd, dd.q);
+function v_lender_iter!(dd::Default, vL = dd.vL, q = dd.q, α = dd.pars[:α], τ = dd.pars[:τ])
+    itp_q = make_itp(dd, q);
     itp_def = make_itp(dd, dd.v[:prob]);
 
-    itp_vL = make_itp(dd, dd.vL);
+    itp_vL = make_itp(dd, vL)
 
     if dd.pars[:θ] > 1e-3
         # gr = gridmake(1:length(dd.gr[:y]), 1:2)
         Threads.@threads for jy in eachindex(dd.gr[:y])
             yv = dd.gr[:y][jy]
-            coupon = coupon_rate(yv, dd)
+            coupon = coupon_rate(yv, dd, α = α, τ = τ)
 
             py = dd.P[:y][jy, :]
 
@@ -407,12 +407,12 @@ function v_lender_iter!(dd::Default)
             for (jb, bv) in enumerate(dd.gr[:b])
 
                 bpv = dd.gb[jb, jy]
-                dd.vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=true)
-                dd.vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=false)
+                vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=true)
+                vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=false)
             end
         end
     else
-        dd.vL[:] .= 1
+        vL[:] .= 1
     end
     nothing
 end

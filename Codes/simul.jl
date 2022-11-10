@@ -32,7 +32,7 @@ function stationary_distribution(dd::DebtMod)
 end
 
 
-function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, pars::Dict, min_y, max_y)
+function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, pars::Dict, min_y, max_y, itp_qRE, itp_qdRE, itp_spr_og)
     ρy, σy, ψ, ℏ, r = (pars[sym] for sym in (:ρy, :σy, :ψ, :ℏ, :r))
 
     if def
@@ -40,15 +40,31 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
         ct = itp_c(b0, y0, 2)
         bp = b0
         q = itp_qD(bp, y0)
+        qRE = itp_qdRE(bp, y0)
+        yield_MTI = itp_spr_og(bp, y0, 2)
     else
         v = itp_R(b0, y0)
         ct = itp_c(b0, y0, 1)
         bp = itp_b(b0, y0)
         q = itp_q(bp, y0)
+        qRE = itp_qRE(bp, y0)
+        yield_MTI = itp_spr_og(bp, y0, 1)
     end
 
-    spread = itp_yield(q, y0) - r
+    # # Ensure that the decomposition is consistent with price (interpolations might be different)
+    # q_adj = q / (qRE + qθcont + qθdef)
+    # qRE     *= q_adj
+    # qθcont  *= q_adj
+    # qθdef   *= q_adj
+
+    yield = itp_yield(q, y0)
+
+    yield_RE = itp_yield(qRE, y0)
     
+    spread_RE = yield_RE - r    
+    spread_MTI = yield_MTI - r
+    spread = yield - r
+
     # ϵ = rand(Normal(0, 1))
     yp = exp(ρy * log(y0) + σy * ϵv)
 
@@ -69,10 +85,10 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
         bp = (1 - ℏ) * bp
     end
 
-    return v, def_p, ct, bp, yp, new_def, q, spread
+    return v, def_p, ct, bp, yp, new_def, q, spread, spread_RE, spread_MTI
 end
 
-function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true)
+function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true)
 
     cd_sep = cond_defs + separation
 
@@ -106,7 +122,7 @@ function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 3
         ξvec = ξvv[jp]
 
         Tmax = length(ϵvec)
-        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp, :acc])
+        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp_RE, :sp_MTI, :sp, :acc])
 
         contflag = true
 
@@ -129,12 +145,15 @@ function simulvec(dd::DebtMod, itp_yield, ϵvv, ξvv; burn_in=200, cond_defs = 3
 
             pp[:v, t] = itp_v(b0, y0)
 
-            v, def, ct, b0, y0, new_def, q, spread = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y)
+            v, def, ct, b0, y0, new_def, q, spread, spread_RE, spread_MTI = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y, itp_qRE, itp_qdRE, itp_spr_og)
 
             pp[:v_cond, t] = v
 
             pp[:q, t] = q
             pp[:spread, t] = (1+spread)^4 - 1 ## annualized
+            pp[:sp_RE, t] = (1+spread_RE)^4 - 1
+            pp[:sp_MTI, t] = (1+spread_MTI)^4 - 1
+
             pp[:sp, t] = (1+get_spread(q, dd))^4 - 1
             pp[:c, t] = ct
 
@@ -165,6 +184,10 @@ function compute_moments(pv::Vector{SimulPath})
     ## measure in basis points, already annualized
     moments[:mean_spr] = mean(mean(pp[:spread]) * 1e4 for pp in pv)
     moments[:mean_sp]  = mean(mean(pp[:sp]) * 1e4 for pp in pv) # this only works if κ = r+ρ
+
+    moments[:sp_RE] = mean(mean(pp[:sp_RE]) * 1e4 for pp in pv)
+    moments[:sp_MTI] = mean(mean(pp[:sp_MTI]) * 1e4 for pp in pv)
+
     moments[:std_spr]  = mean(std(pp[:spread].*1e4) for pp in pv)
 
     # Compare debt to annual GDP
@@ -193,6 +216,8 @@ targets_CE() = Dict{Symbol, Float64}(
     :corr_yc => 0.97,
     :corr_ytb => -0.77,
     :corr_ysp => -0.72,
+    :sp_RE => NaN,
+    :sp_MTI => NaN,
 )
 
 targets_HMR() = Dict{Symbol, Float64}(
@@ -290,6 +315,7 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
 
     syms = [:mean_spr,
     # :mean_sp,
+    :sp_RE, :sp_MTI,
     :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
     targets = get_targets()
@@ -308,6 +334,7 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
 
     names = ["Spread",
     # "Spread OG",
+    "o/w Spread RE", "Spread MTI",
     "Std Spread", "Debt", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)", "Default Prob"]
     maxn = maximum(length(name) for name in names)
 
@@ -381,13 +408,15 @@ end
 function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, savetable=false, showtable=(savetable || false), smalltable=false)
 
     Random.seed!(25)
-    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
 
-    itp_yield = get_yields_itp(dd)
+    itp_yield = get_yields_itp(dd);
+    itp_qRE, itp_qdRE = q_RE(dd);
+    itp_spr_og = itp_mti(dd);
 
-    pv_uncond, _ = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
+    pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
 
-    pv, ϵvv = simulvec(dd, itp_yield, ϵvv, ξvv)
+    pv, ϵvv = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
 
     objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
 
@@ -401,14 +430,19 @@ function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_
     # :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
 
     Random.seed!(25)
-    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
-    ϵvv, ξvv = simulshocks(cond_T, cond_K)
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
+    ϵvv, ξvv = simulshocks(cond_T, cond_K);
 
-    itp_yield = get_yields_itp(dd)
+    itp_yield = get_yields_itp(dd);
+    showtable && print("yields ✓ ")
+    itp_qRE, itp_qdRE = q_RE(dd);
+    showtable && print("RE ✓ ")
+    itp_spr_og = itp_mti(dd);
+    showtable && print("MTI ✓\n")
 
-    pv_uncond, _ = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
+    pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
 
-    pv, ϵvv, ξvv = simulvec(dd, itp_yield, ϵvv, ξvv)
+    pv, ϵvv, ξvv = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
 
     objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
 

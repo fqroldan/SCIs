@@ -1,5 +1,5 @@
 function update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd::Default)
-    ρ, ψ = (dd.pars[key] for key in (:ρ, :ψ))
+    ρ, ψ, ℏ = (dd.pars[key] for key in (:ρ, :ψ, :ℏ))
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
 
@@ -23,38 +23,43 @@ function update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd::Default)
         end
 
         new_q[jbp, jy] = Eq  / (1+r)
-        new_qd[jbp jy] = EqD / (1+r)
+        new_qd[jbp, jy] = EqD / (1+r)
     end
 end
 
-function q_RE(dd::Default, r=dd.pars[:r]; tol=1e-6, maxiter=2_000, verbose=false)
+function q_RE(dd::Default, r=dd.pars[:r]; tol=1e-6, maxiter=2_000, verbose=false, do_calc = true)
     dist = 1 + tol
     iter = 0
 
-    q_star  = ones(length(dd.gr[:b]), length(dd.gr[:y]))
-    q_stard = ones(length(dd.gr[:b]), length(dd.gr[:y]))
+    q_star  = copy(dd.q)
+    q_stard = copy(dd.qD)
     new_q   = similar(q_star)
     new_qd  = similar(q_star)
 
-    while dist > tol && iter < maxiter
-        iter += 1
+    if do_calc
+        while dist > tol && iter < maxiter
+            iter += 1
 
-        itp_q  = make_itp(dd, q_star)
-        itp_qd = make_itp(dd, q_stard)
+            itp_q  = make_itp(dd, q_star)
+            itp_qd = make_itp(dd, q_stard)
 
-        update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd)
-        dist = norm(new_q - q_star) / max(1, norm(q_star))
+            update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd)
+            dist = norm(new_q - q_star) / max(1, norm(q_star))
 
-        q_star  .= new_q
-        q_stard .= new_qd
+            q_star  .= new_q
+            q_stard .= new_qd
 
-        verbose && print("Iteration $iter, d = $dist\n")
+            verbose && print("Iteration $iter, d = $dist\n")
+        end
     end
-    return q_star, q_stard
+
+    itp_qRE = interpolate((dd.gr[:b], dd.gr[:y]), q_star, Gridded(Linear()))
+    itp_qdRE = interpolate((dd.gr[:b], dd.gr[:y]), q_stard, Gridded(Linear()))
+
+    return itp_qRE, itp_qdRE
 end
 
-
-function update_q_nodef!(new_q, q_star, r, dd::Default)
+function update_q_nodef!(new_q, q_star, r, dd::Default, α, τ)
     ρ = dd.pars[:ρ]
 
     for jy in eachindex(dd.gr[:y])
@@ -63,7 +68,7 @@ function update_q_nodef!(new_q, q_star, r, dd::Default)
         for (jyp, ypv) in enumerate(dd.gr[:y])
             prob = py[jyp]
         
-            coupon = coupon_rate(ypv, dd)
+            coupon = coupon_rate(ypv, dd, α = α, τ = τ)
             resale = (1-ρ) * q_star[jyp]
 
             cond_rep = coupon + resale
@@ -74,7 +79,7 @@ function update_q_nodef!(new_q, q_star, r, dd::Default)
     end
 end
 
-function q_nodef(dd::Default, r::Float64; tol = 1e-6, maxiter = 2_000, verbose = false)
+function q_nodef(dd::Default, r::Float64, α, τ; tol = 1e-6, maxiter = 2_000, verbose = false)
     dist = 1+tol
     iter = 0
 
@@ -84,7 +89,7 @@ function q_nodef(dd::Default, r::Float64; tol = 1e-6, maxiter = 2_000, verbose =
     while dist > tol && iter < maxiter
         iter += 1
         
-        update_q_nodef!(new_q, q_star, r, dd)
+        update_q_nodef!(new_q, q_star, r, dd, α, τ)
         dist = norm(new_q - q_star) / max(1, norm(q_star))
 
         q_star .= new_q
@@ -94,7 +99,7 @@ function q_nodef(dd::Default, r::Float64; tol = 1e-6, maxiter = 2_000, verbose =
     return q_star
 end
 
-function yield_grid(dd::Default, Nr)
+function yield_grid(dd::Default, Nr, α, τ)
     Ny = length(dd.gr[:y])
     rgrid = range(0.0, 0.2, length=Nr+1)[2:end]
 
@@ -103,7 +108,7 @@ function yield_grid(dd::Default, Nr)
     Threads.@threads for jr in eachindex(rgrid)
         rv = rgrid[jr]
 
-        qstar = q_nodef(dd, rv)
+        qstar = q_nodef(dd, rv, α, τ)
 
         q_mat[jr, :] .= qstar
     end
@@ -130,17 +135,17 @@ function yields_from_q(q_mat, rgrid, dd::Default, Nq)
     return r_mat, qgrid
 end
 
-function get_yields(dd::Default, Nr, Nq)
+function get_yields(dd::Default, Nr, Nq, α, τ)
     
-    q_mat, rgrid = yield_grid(dd, Nr)
+    q_mat, rgrid = yield_grid(dd, Nr, α, τ)
     r_mat, qgrid = yields_from_q(q_mat, rgrid, dd, Nq)
 
     return r_mat, qgrid
 end
 
-function get_yields_itp(dd::Default, Nr = 400, Nq = 800)
+function get_yields_itp(dd::Default, Nr = 400, Nq = 800; α = dd.pars[:α], τ = dd.pars[:τ])
 
-    r_mat, qgrid = get_yields(dd, Nr, Nq)
+    r_mat, qgrid = get_yields(dd, Nr, Nq, α, τ)
     itp_yield = interpolate((qgrid, dd.gr[:y]), r_mat, Gridded(Linear()))
 
     itp_yield = extrapolate(itp_yield, Interpolations.Flat())
@@ -151,81 +156,126 @@ get_spread(q, κ::Number) = κ * (1/q - 1)
 get_spread(q, dd::DebtMod) = get_spread(q, dd.pars[:κ])
 
 
-function spread_decomp(dd::DebtMod)
-    ρ, ℏ, θ, βL = (dd.pars[sym] for sym in (:ρ, :ℏ, :θ, :βL))
+function q_iter_local!(new_q, new_qd, old_q, old_qD, dd::Default, vL)
+    """ Ecuación de Euler de los acreedores determinan el precio de la deuda dada la deuda, el ingreso, y el precio esperado de la deuda """
+    ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
     # Interpola el precio de la deuda (para mañana)
-    itp_qd = make_itp(dd, dd.qD);
-    itp_q = make_itp(dd, dd.q);
-
-    q_RE = similar(dd.q)
-    qθ_def = similar(dd.q)
-    qθ_cont = similar(dd.q)
+    itp_qd = make_itp(dd, old_qD);
+    itp_q = make_itp(dd, old_q);
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
-        Eq_RE   = 0.0
-        E_P     = 0.0
-        E_PD    = 0.0
-        E_M     = 0.0
-        E_d     = 0.0
-        E_Md    = 0.0
-        E_MP    = 0.0
-        E_MPD   = 0.0
-        
-        sum_sdf = 0.0
-        
+        Eq = 0.0
+        EqD = 0.0
+        sum_sdf_R = 0.0
+        sum_sdf_D = 0.0
         for (jyp, ypv) in enumerate(dd.gr[:y])
-            prob = dd.P[:y][jy, jyp]
-
             prob_def = dd.v[:prob][jbp, jyp]
         
             if θ > 1e-3
-                sdf_R = exp(-θ * dd.vL[jbp, jyp, 1])
-                sdf_D = exp(-θ * dd.vL[jbp, jyp, 2])
+                sdf_R = exp(-θ * vL[jbp, jyp, 1])
+                sdf_D = exp(-θ * vL[jbp, jyp, 2])
             else
                 sdf_R = 1.
                 sdf_D = 1.
             end
         
-            coupon = coupon_rate(ypv, dd)
+            coupon = coupon_rate(ypv, dd, α = 1, τ = 1)
         
             # Si el país tiene acceso a mercados, emite y puede hacer default mañana
             bpp = dd.gb[jbp, jyp]
-
-            P  = coupon + (1-ρ) * itp_q(bpp, jyp)
-            PD = (1-ℏ) * itp_qd((1-ℏ) * bpv, jyp)
-
-            Eq_RE += prob * (prob_def * PD + (1 - prob_def) * P)
-
-            E_P   += prob * P
-
-            E_PD  += prob * PD
-
-            sum_sdf += prob * (prob_def * sdf_D + (1-prob_def) * sdf_R)
-            E_M   += prob * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
-
-            E_d   += prob * prob_def * 1
-
-            E_Md  += prob * βL * (prob_def * sdf_D + (1-prob_def) * 0)
-
-            E_MP  += prob * P  * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
-            E_MPD += prob * PD * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
-        end
-
-        cov_M_d  = (E_Md - E_M * E_d) / sum_sdf
-        cov_M_P  = (E_MP - E_M * E_P) / sum_sdf
-        cov_M_PD = (E_MPD- E_M * E_PD)/ sum_sdf
+            rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
         
-        q_RE[jbp, jy] = E_M / sum_sdf * Eq_RE
+            # Si el país está en default, mañana puede recuperar acceso a mercados
+            rep_D = ψ * rep_R + (1 - ψ) * sdf_D * old_qD[jbp, jyp]
+        
+            prob = dd.P[:y][jy, jyp]
+            Eq += prob * rep_R
+            EqD += prob * rep_D
+        
+            sum_sdf_R += prob * (prob_def * sdf_D + (1 - prob_def) * sdf_R)
+            sum_sdf_D += prob * ((1-ψ) * sdf_D + ψ * sdf_R)
+        end
+        new_q[jbp, jy] = Eq / (1 + r) / sum_sdf_R
+        new_qd[jbp, jy] = EqD / (1 + r) / sum_sdf_D
+    end
+end
 
-        qθ_def[jbp, jy] = - (E_P - E_PD) * cov_M_d
+function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
 
-        qθ_cont[jbp, jy] = (1-E_d) * cov_M_P + E_d * cov_M_PD
+    iter = 0
+    dist = 1+tol
+
+    q  = copy(dd.q)
+    qD = copy(dd.qD)
+
+    new_q  = similar(dd.q)
+    new_qD = similar(dd.qD)
+
+    vL = similar(dd.vL)
+
+    while dist > tol && iter < maxiter
+        iter += 1
+
+        v_lender_iter!(dd, vL)
+        q_iter_local!(new_q, new_qD, q, qD, dd, vL)
+        
+        dist_qR = norm(new_q - q) / max(1, norm(q))
+        dist_qD = norm(new_qD - qD)/max(1, norm(qD))
+        
+        dist = max(dist_qD, dist_qR)
+
+        q  .= new_q
+        qD .= new_qD
+    end
+    verbose && print("Done in $iter iterations")
+    return q, qD
+end
+
+function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
+    iter = 0
+    dist = 1+tol
+
+    q  = copy(dd.q)
+    qD = copy(dd.qD)
+
+    new_q  = similar(dd.q)
+    new_qD = similar(dd.qD)
+
+    while dist > tol && iter < maxiter
+        iter += 1
+
+        q_iter_local!(new_q, new_qD, q, qD, dd, dd.vL)
+        
+        dist_qR = norm(new_q - q) / max(1, norm(q))
+        dist_qD = norm(new_qD - qD)/max(1, norm(qD))
+        
+        dist = max(dist_qD, dist_qR)
+
+        q  .= new_q
+        qD .= new_qD
+    end
+    verbose && print("Done in $iter iterations")
+    return q, qD
+end
+
+function itp_mti(dd::DebtMod; do_cal=true)
+    
+    spr_og = zeros(length(dd.gr[:b]), length(dd.gr[:y]), 1:2)
+    
+    if do_cal
+        q, qD = q_SDF_og(dd)
+        itp_yield = get_yields_itp(dd::Default, α = 1, τ = 1)
+
+        for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
+            # 1 = repayment
+            # 2 = default
+
+            spr_og[jb, jy, 1] = itp_yield(q[jb, jy], yv)
+            spr_og[jb, jy, 2] = itp_yield(qD[jb, jy], yv)
+        end
     end
 
-    itp_q_RE = interpolate((dd.gr[:b], dd.gr[:y]), q_RE, Gridded(Linear()))
-    itp_qθ_def = interpolate((dd.gr[:b], dd.gr[:y]), qθ_def, Gridded(Linear()))
-    itp_qθ_cont = interpolate((dd.gr[:b], dd.gr[:y]), qθ_cont, Gridded(Linear()))
-
-    return itp_q_RE, itp_qθ_def, itp_qθ_cont
+    knts = (dd.gr[:b], dd.gr[:y], 1:2)
+    itp_spr_og = interpolate(knts, spr_og, Gridded(Linear()))
 end
