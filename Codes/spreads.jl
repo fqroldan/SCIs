@@ -1,3 +1,59 @@
+function update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd::Default)
+    ρ, ψ = (dd.pars[key] for key in (:ρ, :ψ))
+
+    for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
+
+        Eq = 0.0
+        EqD = 0.0
+
+        for (jyp, ypv) in enumerate(dd.gr[:y])
+            prob = dd.P[:y][jy, jyp]
+            
+            prob_def = dd.v[:prob][jbp, jyp]
+            bpp = dd.gb[jbp, jyp]
+
+            coupon = coupon_rate(ypv, dd)
+
+            rep_R = (1 - prob_def) * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
+
+            rep_D = ψ * rep_R + (1 - ψ) * dd.qD[jbp, jyp]
+
+            Eq += prob * rep_R
+            EqD += prob * rep_D
+        end
+
+        new_q[jbp, jy] = Eq  / (1+r)
+        new_qd[jbp jy] = EqD / (1+r)
+    end
+end
+
+function q_RE(dd::Default, r=dd.pars[:r]; tol=1e-6, maxiter=2_000, verbose=false)
+    dist = 1 + tol
+    iter = 0
+
+    q_star  = ones(length(dd.gr[:b]), length(dd.gr[:y]))
+    q_stard = ones(length(dd.gr[:b]), length(dd.gr[:y]))
+    new_q   = similar(q_star)
+    new_qd  = similar(q_star)
+
+    while dist > tol && iter < maxiter
+        iter += 1
+
+        itp_q  = make_itp(dd, q_star)
+        itp_qd = make_itp(dd, q_stard)
+
+        update_q_RE!(new_q, new_qd, itp_q, itp_qd, r, dd)
+        dist = norm(new_q - q_star) / max(1, norm(q_star))
+
+        q_star  .= new_q
+        q_stard .= new_qd
+
+        verbose && print("Iteration $iter, d = $dist\n")
+    end
+    return q_star, q_stard
+end
+
+
 function update_q_nodef!(new_q, q_star, r, dd::Default)
     ρ = dd.pars[:ρ]
 
@@ -96,7 +152,7 @@ get_spread(q, dd::DebtMod) = get_spread(q, dd.pars[:κ])
 
 
 function spread_decomp(dd::DebtMod)
-    ρ, ℏ, θ, βL = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ, :βL))
+    ρ, ℏ, θ, βL = (dd.pars[sym] for sym in (:ρ, :ℏ, :θ, :βL))
 
     # Interpola el precio de la deuda (para mañana)
     itp_qd = make_itp(dd, dd.qD);
@@ -107,7 +163,7 @@ function spread_decomp(dd::DebtMod)
     qθ_cont = similar(dd.q)
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
-        Eq_RE = 0.0
+        Eq_RE   = 0.0
         E_P     = 0.0
         E_PD    = 0.0
         E_M     = 0.0
@@ -139,7 +195,7 @@ function spread_decomp(dd::DebtMod)
             P  = coupon + (1-ρ) * itp_q(bpp, jyp)
             PD = (1-ℏ) * itp_qd((1-ℏ) * bpv, jyp)
 
-            Eq_RE += prob * ((1 - prob_def) * P + (prob_def) * PD)
+            Eq_RE += prob * (prob_def * PD + (1 - prob_def) * P)
 
             E_P   += prob * P
 
@@ -152,8 +208,8 @@ function spread_decomp(dd::DebtMod)
 
             E_Md  += prob * βL * (prob_def * sdf_D + (1-prob_def) * 0)
 
-            E_MP  += prob * P * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
-            E_MPD += prob * PD* βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
+            E_MP  += prob * P  * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
+            E_MPD += prob * PD * βL * (prob_def * sdf_D + (1-prob_def) * sdf_R)
         end
 
         cov_M_d  = (E_Md - E_M * E_d) / sum_sdf
@@ -167,5 +223,9 @@ function spread_decomp(dd::DebtMod)
         qθ_cont[jbp, jy] = (1-E_d) * cov_M_P + E_d * cov_M_PD
     end
 
-    return q_RE, qθ_def, qθ_cont
+    itp_q_RE = interpolate((dd.gr[:b], dd.gr[:y]), q_RE, Gridded(Linear()))
+    itp_qθ_def = interpolate((dd.gr[:b], dd.gr[:y]), qθ_def, Gridded(Linear()))
+    itp_qθ_cont = interpolate((dd.gr[:b], dd.gr[:y]), qθ_cont, Gridded(Linear()))
+
+    return itp_q_RE, itp_qθ_def, itp_qθ_cont
 end
