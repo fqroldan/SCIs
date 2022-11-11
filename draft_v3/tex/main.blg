@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2020/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: style1.bst
+A level-1 auxiliary file: bu.aux
+Database file #1: sci.bib
+Warning--empty journal in Alvarez
+Warning--empty journal in Benjamin
+You've used 58 entries,
+            2755 wiz_defined-function locations,
+            943 strings with 13064 characters,
+and the built_in function-call counts, 31494 in all, are:
+= -- 2501
+> -- 1170
+< -- 88
++ -- 433
+- -- 363
+* -- 2362
+:= -- 4872
+add.period$ -- 181
+call.type$ -- 58
+change.case$ -- 364
+chr.to.int$ -- 58
+cite$ -- 60
+duplicate$ -- 2465
+empty$ -- 2291
+format.name$ -- 561
+if$ -- 6093
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 538
+newline$ -- 302
+num.names$ -- 232
+pop$ -- 1095
+preamble$ -- 1
+purify$ -- 353
+quote$ -- 0
+skip$ -- 882
+stack$ -- 0
+substring$ -- 1323
+swap$ -- 1330
+text.length$ -- 46
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 510
+warning$ -- 2
+while$ -- 206
+width$ -- 0
+write$ -- 752
+(There were 2 warnings)

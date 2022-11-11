@@ -1,0 +1,215 @@
+\documentclass[letterpaper,12pt]{article}
+
+\ifdefined\ungated
+\else
+\def\ungated{1}
+\fi
+\ifdefined\submission
+\else
+  \def\submission{0}
+\fi
+
+\usepackage{amssymb,datetime,xspace,amsfonts,amsmath,amsthm,scalefnt,wrapfig,graphicx,subfigure,pdflscape,natbib,multirow,longtable,array,rotating,bibunits,fix-cm,float,epsfig,epstopdf,refstyle,tabularx,booktabs,tikz,verbatim,bbm}
+\usepackage[shortlabels]{enumitem}
+% \usepackage[american]{babel}
+\usepackage[flushleft]{threeparttable}
+
+\usepackage[margin=1in]{geometry}
+
+\usepackage{url}
+\usepackage{pdfpages}
+\usepackage[libertine]{newtxmath}
+\usepackage{libertine}
+\graphicspath{{../Images/}}
+\newcommand{\alert}[1]{{\color{red}#1}}
+\definecolor{mDarkTeal}{HTML}{23373b}
+\usepackage[normalem]{ulem}
+
+\epstopdfsetup{suffix=}
+\setcounter{MaxMatrixCols}{10}
+\usetikzlibrary{matrix,shapes,arrows}
+%\pgfkeys{/pgf/number format/.cd,fixed,fixed zerofill,precision=2}
+\usepackage{afterpage}
+\usepackage{eurosym}
+\usetikzlibrary{arrows,positioning,decorations.pathreplacing} 
+\usetikzlibrary{shapes.misc, positioning}
+\usetikzlibrary{shapes.geometric}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{implications}{Testable Implications}
+\newtheorem*{implications*}{Testable Implications}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lem}[theorem]{Lemma}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+\def\defeq{\mathrel{\mathop:}=}
+\usepackage{setspace}
+\usepackage[makeroom]{cancel}
+
+%\setlength{\belowdisplayskip}{3pt}
+
+\newcommand{\ex}[2][{}]{\mathbb{E}_{#1}\left[ #2 \right]}
+\newcommand{\Epsi}{\mathcal{E}}
+\newcommand{\wt}[1]{\widetilde{#1}}
+\newcommand{\wh}[1]{\widehat{#1}}
+\newcommand{\wb}[1]{\overline{#1}}
+\newcommand{\tteal}[1]{\textcolor{teal}{#1}}
+\renewcommand{\baselinestretch}{1.0}
+\newcommand{\eur}{\text{\euro}}
+% \setlength{\skip\footins}{0.8\baselineskip}
+% \setlength{\footnotesep}{0.5\baselineskip}
+%\newcommand{\ind}[1]{\index{#1@\emph{#1}}}
+\def\ind{\mathbbm{1}}
+
+\usepackage{hyperref}
+\hypersetup{allbordercolors={1 1 1},allcolors=blue!65!black,colorlinks=true}
+\usepackage[space]{grffile}
+\usepackage[bf,small]{caption}
+\usepackage[capitalize,nameinlink]{cleveref}
+
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\usetikzlibrary{arrows,positioning,decorations.pathreplacing} 
+
+\tikzset{
+    >=stealth',
+    %Define boxe
+    punkt/.style={
+           rectangle,
+           rounded corners,
+           draw=black, thick,
+           text width=18em,
+           minimum height=2em,
+           align=flush left},
+    % Define arrow
+    pil/.style={
+           -,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
+
+\newcommand{\mycr}[1]{%
+  \tikz[baseline=(char.base)]\node[anchor=south west, draw,rectangle, rounded corners, inner sep=2pt, minimum size=4mm,
+    text height=1.5mm](char){\ensuremath{#1}} ;}
+		
+\definecolor{forestgreen}{rgb}{0.0, 0.27, 0.13}
+
+\allowdisplaybreaks
+
+\newenvironment{figurenotes}[1][Note]%
+{\small \emph{#1: }}%
+{}%
+
+\newenvironment{tablenotes1}[1][Note]%
+{~\\\small \emph{#1: }}%
+{}%
+
+\bibliographystyle{style1}
+
+\def\acknotitle{Thanks for insightful discussions to Anmol Bhandari, Martin Beraja, Gita Gopinath, Lars Peter Hansen, Juan Carlos Hatchondo, Julian Kozlowski, Leonardo Martinez, Andy Neumeyer, Juan Passadore, Ignacio Presno, Juan Sánchez, Thomas Sargent, Nicholas Trachter, Jeromin Zettelmeyer, and the participants at several academic seminars and conferences. The views expressed in this paper are those of the authors and do not necessarily represent those of the IMF, its Executive Board, or management.}
+
+
+\title{Uncertainty Premia, Sovereign Default Risk, and State-Contingent Debt\thanks{\acknotitle}}
+
+\author{
+\href{https://sites.google.com/site/franroch/}{\color{mDarkTeal}Francisco Roch}\\{ IMF}
+\and
+\href{https://fqroldan.github.io}{\color{mDarkTeal}Francisco Roldán}\\{ IMF}
+}
+
+\date{%
+\monthname\xspace \the\year%
+}
+
+\begin{document}
+
+\fontsize{12.0pt}{25.0pt} \selectfont
+
+\ifnum\ungated=1%
+  \maketitle
+  \begin{abstract}
+  \noindent%
+  \fontsize{12.0pt}{18.0pt}\selectfont%
+  \input{abstract_sci.txt}
+  \end{abstract}
+  \renewcommand{\thefootnote}{\fnsymbol{footnote}} \renewcommand{%
+  \thefootnote}{\arabic{footnote}} %\fontsize{11}{15}\selectfont
+  \thispagestyle{empty} \setcounter{page}{0}
+  \fontsize{12.0pt}{25.0pt} \selectfont
+  \vfill
+  \noindent\textbf{JEL Classification} \quad E43, E44, F34, G12, H63, O16 \\
+  \noindent\textbf{Keywords} \quad Sovereign debt, default risk, state-contingent debt instruments, robust control, ambiguity premia
+  \vfill
+\else
+  \includepdf[pages=-]{cover_imfwp_sci.pdf}
+  \tableofcontents
+\fi
+
+
+\newpage
+
+\input{intro}
+\input{summarySCI}
+\input{2permodel}
+\input{quantmodel}
+\input{quantresults}
+\input{conc}
+
+\newpage
+\linespread{1.0}
+\bibliography{sci}
+
+
+% \begin{align*}
+%  q(b) = \beta \frac{\exp(-\theta b) \mathbb{P}(z > \tau)}{\mathbb{P}(z \leq \tau) + \exp(-\theta b) \mathbb{P}(z > \tau)}
+% \end{align*}
+
+\newpage
+\appendix\numberwithin{equation}{section} \newpage {}
+\bigskip {}{}
+%\fontsize{11}{12}\selectfont
+
+\appendix
+\section{Solution method}\label{app:algorithm}
+
+We solve the model following the numerical algorithm proposed in \cite{Chatty}. The main feature of the approach is the inclusion of a continuous iid shock, $m_t$, in the computation to overcome convergence problems that arise in models with long-duration bonds. The proof of existence of an equilibrium price function in \cite{Chatty} requires including this shock. We solve the model numerically using value function iteration and using a discrete state space technique. The shock $y_t$ is then discretized into a 200-state Markov chain using a quadrature based procedure (\citealp{Tauchen}), and $m_t$ is continously normally distributed in $[-2\sigma_m, 2\sigma_m]$. The asset space is discretized into 300 grid points equally spaced. Then, the algorithm consists of the following value function iteration:
+
+\begin{itemize}
+
+\item Assume an initial bond price schedule, $q^0 = \frac{1}{(1+r)}$. Given bond prices, update value functions and compute the debt and default policy functions as in \cite{Chatty}.
+\item Given these policy functions, update bond prices.
+\item Iterate until both value functions and the bond price schedule converge.
+
+\end{itemize}
+
+\section{Robust lenders' problem in the 2-period model}\label{app:lenders}
+
+Foreign lenders value streams of consumption according to
+\begin{align*}
+  v^L(c_1, c_2) = &\,\min_m u(c_1) + \beta \ex{m u(c_2) + \frac{1}{\theta} m \log m} \\
+  \text{subject to } \,
+  & \ex{m} = 1
+\end{align*}
+where $m$ is a non-negative random variable used by the agent to twist probabilities towards worse outcomes. As is standard, we use this formulation not because we believe our agent thinks that the worst-case model does govern the state, but as a way to obtain robust policies that perform well regardless of the actual model.
+
+We use the \emph{multiplier preferences} formulation in which the agent entertains any probability distortion but faces a cost given by the relative entropy of the distorted distribution relative to the approximating one. The critical parameter measuring the extent of robustness is the inverse of the marginal cost of entropy for the minimizing agent, $\theta$.
+
+
+\end{document}

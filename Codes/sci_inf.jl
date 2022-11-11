@@ -37,10 +37,10 @@ function Default(;
     ρy=0.9484,
     σy=0.02,
     # σy = 0.026,
-    Nb=200,
-    Ny=21,
-    bmax=1.5,
-    std_devs = 3,
+    Nb=150,
+    Ny=91,
+    bmax=1.25,
+    std_devs = 5,
     κ = r+ρ,
     min_q = 0.35,
 )
@@ -51,7 +51,7 @@ function Default(;
     βL = 1/(1+r)
     wL = 1
 
-    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL, :min_q => min_q)
+    pars = Dict(:β => β, :γ => γ, :r => r, :θ => θ, :χ => χ, :ρ => ρ, :κ => κ, :ℏ => ℏ, :d1 => d1, :d2 => d2, :ρy => ρy, :σy => σy, :α => α, :τ => τ, :ψ => ψ, :βL => βL, :wL => wL, :min_q => min_q, :Nb => Nb, :Ny => Ny, :bmax => bmax, :std_devs => std_devs)
 
     ychain = tauchen(Ny, ρy, σy, 0, std_devs)
 
@@ -75,6 +75,13 @@ function Default(;
 
     return Default(pars, gr, P, v, vL, gc, gb, q, qD)
 end
+
+info(dd::DebtMod) = Dict(
+    key => dd.pars[key] for key in (:β, :θ, :d1, :d2, :α, :τ, :χ, :κ, :Nb, :Ny, :bmax, :std_devs) if haskey(dd.pars, key)
+)
+
+cons_equiv(v::Number, dd::DebtMod) = cons_equiv(v, dd.pars[:β], dd.pars[:γ])
+cons_equiv(v::Number, β::Number, γ::Number) = (v * (1-β) * (1-γ))^(1/(1-γ))
 
 function logsumexp(a::AbstractVector{<:Real})
     m = maximum(a)
@@ -114,8 +121,8 @@ end
 cons_in_default(yv, dd::DebtMod) = cons_in_default(yv, dd.pars[:d1], dd.pars[:d2])
 cons_in_default(yv, d1::Number, d2::Number) = yv - max(0, d1 * yv + d2 * yv^2)
 
-function coupon_rate(yv, dd::DebtMod)
-    α, τ, κ = (dd.pars[sym] for sym in (:α, :τ, :κ))
+function coupon_rate(yv, dd::DebtMod; α = dd.pars[:α], τ = dd.pars[:τ])
+    κ = dd.pars[:κ]
 
     linear_coup = 1 + α * (yv-1)
     if yv >= τ
@@ -180,21 +187,6 @@ function max_adj(jb, jy, bmax, itp_q, dd::DebtMod)
     return bmin
 end
 
-function borrowing_limit(jy, itp_q, dd::DebtMod)
-    bmin, bmax = extrema(dd.gr[:b])
-
-    min_q = dd.pars[:min_q]
-
-    objf(bpv) = (itp_q(bpv, jy) - min_q)^2
-
-    if itp_q(bmax, jy) < min_q
-        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
-        bmax = res.minimizer
-    end
-    return bmax
-end
-
-
 function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     """ Elige b' en (b,y) para maximizar la función de valor """
 
@@ -205,7 +197,7 @@ function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_Ev, dd)[1]
 
     if bmax - bmin < 1e-4
-        b_star = bmin
+        b_star = bmax
     else
         # Resuelve el máximo
         res = Optim.optimize(obj_f, bmin, bmax, GoldenSection())
@@ -241,14 +233,42 @@ function value_default(jb, jy, dd::DebtMod)
     return c, v
 end
 
-function make_itp_vp(dd::DebtMod, jy)
+function borrowing_limit_q(jy, itp_q, dd::DebtMod)
+    bmin, bmax = extrema(dd.gr[:b])
+
+    min_q = dd.pars[:min_q]
+
+    objf(bpv) = (itp_q(bpv, jy) - min_q)^2
+
+    if itp_q(bmax, jy) < min_q
+        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
+        bmax = res.minimizer
+    end
+    return bmax
+end
+
+function borrowing_limit(itp_def, dd::DebtMod)
+    bmin, bmax = extrema(dd.gr[:b])
+
+    max_prob = 0.95
+
+    objf(bpv) = (itp_def(bpv) - max_prob)^2
+
+    if itp_def(bmax) > max_prob
+        res = Optim.optimize(objf, bmin, bmax, GoldenSection())
+        bmax = res.minimizer
+    end
+    return bmax
+end
+
+function make_itp_vp(dd::DebtMod, jy, mat)
     Ev = similar(dd.gr[:b])
     for jbp in eachindex(dd.gr[:b])
         Evc = 0.0
         for jyp in eachindex(dd.gr[:y])
             prob = dd.P[:y][jy,jyp]
 
-            Evc += prob * dd.v[:V][jbp, jyp]
+            Evc += prob * mat[jbp, jyp]
         end
         Ev[jbp] = Evc
     end
@@ -261,9 +281,11 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
     # itp_v = make_itp(dd, dd.v[:V]);
     
     Threads.@threads for jy in eachindex(dd.gr[:y])
-        itp_Ev = make_itp_vp(dd, jy);
-        
-        bmax = borrowing_limit(jy, itp_q, dd)
+        itp_Ev = make_itp_vp(dd, jy, dd.v[:V]);
+        itp_def = make_itp_vp(dd, jy, dd.v[:prob]);
+
+        # bmax = borrowing_limit_q(jy, itp_q, dd)
+        bmax = borrowing_limit(itp_def, dd)
         for jb in eachindex(dd.gr[:b])
         
             # En repago
@@ -307,7 +329,7 @@ function logsumexp_onepass(X, w)
     a = -Inf
     r = zero(eltype(X))
     for (x, wi) in zip(X, w)
-        if x ≤ a
+        if x <= a
             # standard computation
             r += wi * exp(x - a)
         else
@@ -320,8 +342,8 @@ function logsumexp_onepass(X, w)
     return a + log(r)
 end
 
-function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::DebtMod, gr, x, w; rep)
-    θ, wL, βL, ρ, ψ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ))
+function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::DebtMod, vLp; rep)
+    θ, wL, βL, ρ, ψ, ℏ = (dd.pars[sym] for sym in (:θ, :wL, :βL, :ρ, :ψ, :ℏ))
     
     cL = wL
     if rep
@@ -332,52 +354,65 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         bpv = bv
     end
 
-    # Ev = 0.0
-    for js in axes(gr, 1)
-        jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
+    # for js in axes(gr, 1)
+    #     jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
+
+    #     p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
+    #     prob = py[jyp]
+
+    #     w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
+
+    #     # haircut when going from repayment to default
+    #     b_pv = ifelse(rep && jζp == 2, (1-ℏ)*bpv, bpv) 
+
+    #     x[js] = -θ * itp_vL(b_pv, jyp, jζp)
+    # end
+    # # log ∑_i prob_i exp(-θ v^L_i)
+    # Tv = logsumexp_onepass(x, w) / -θ
+
+    # Without robustness to the preference shock
+    for jyp in eachindex(dd.gr[:y])
 
         p_def = ifelse(rep, itp_def(bpv, jyp), 1-ψ)
-        prob = py[jyp]
-        
-        w[js] = ifelse(jζp == 1, 1-p_def, p_def) * prob
+        bpv_R = bpv
+        bpv_D = ifelse(rep, (1-ℏ)*bpv, bpv)
 
-        x[js] = -θ * itp_vL(bpv, jyp, jζp)
+        vLp[jyp] = p_def * itp_vL(bpv_D, jyp, 2) + (1-p_def) * itp_vL(bpv_R, jyp, 1)
     end
+    Tv = logsumexp_onepass(-θ * vLp, py) / -θ
 
-    # log ∑_i prob_i exp(-θ v^L_i)
-    Tv = logsumexp_onepass(x, w) / -θ
     vL = cL + βL * Tv
 
     return vL
 end
 
-function v_lender_iter!(dd::Default)
-    itp_q = make_itp(dd, dd.q);
+function v_lender_iter!(dd::Default, vL = dd.vL, q = dd.q, α = dd.pars[:α], τ = dd.pars[:τ])
+    itp_q = make_itp(dd, q);
     itp_def = make_itp(dd, dd.v[:prob]);
 
-    itp_vL = make_itp(dd, dd.vL);
+    itp_vL = make_itp(dd, vL)
 
     if dd.pars[:θ] > 1e-3
+        # gr = gridmake(1:length(dd.gr[:y]), 1:2)
         Threads.@threads for jy in eachindex(dd.gr[:y])
             yv = dd.gr[:y][jy]
-            coupon = coupon_rate(yv, dd)
+            coupon = coupon_rate(yv, dd, α = α, τ = τ)
 
             py = dd.P[:y][jy, :]
 
-            gr = gridmake(1:length(dd.gr[:y]), 1:2)
-
-            w = zeros(size(gr,1))
-            x = zeros(size(gr,1))
+            # w = zeros(size(gr,1))
+            # x = zeros(size(gr,1))
+            vLp = similar(dd.gr[:y])
             
             for (jb, bv) in enumerate(dd.gr[:b])
 
                 bpv = dd.gb[jb, jy]
-                dd.vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=true)
-                dd.vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, gr, x, w, rep=false)
+                vL[jb, jy, 1] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=true)
+                vL[jb, jy, 2] = value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd, vLp, rep=false)
             end
         end
     else
-        dd.vL[:] .= 1
+        vL[:] .= 1
     end
     nothing
 end
@@ -387,7 +422,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
     # Interpola el precio de la deuda (para mañana)
-    itp_qd = make_itp(dd, dd.qD);|
+    itp_qd = make_itp(dd, dd.qD);
     itp_q = make_itp(dd, dd.q);
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
@@ -427,7 +462,7 @@ function q_iter!(new_q, new_qd, dd::Default)
     end
 end
 
-function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
+function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tinyreport::Bool = false, verbose = !tinyreport)
 
     new_v = similar(dd.v[:V]);
     new_q = similar(dd.q);
@@ -438,6 +473,8 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
 
     while iter < min_iter || (dist > tol && iter < maxiter)
         iter += 1
+
+        iter % 100 == 0 && print(".")
 
         verbose && print("Iteration $iter: ")
 
@@ -461,10 +498,12 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, min_iter = 1, tinyreport::Bool
 
         # Guardamos todo
         dd.v[:V] .= new_v
-        dd.q .= new_q
-        dd.qD .= new_qd
+        dd.q .= dd.q + upd_η * (new_q - dd.q)
+        dd.qD .= dd.qD + upd_η * (new_qd - dd.qD)
 
         verbose && print("dist (v,q) = ($(@sprintf("%0.3g", dist_v)), $(@sprintf("%0.3g", dist_q))) at |v| = $(@sprintf("%0.3g", norm_v)) \n")
+
+        upd_η = max(0.005, upd_η * 0.99)
     end
     if tinyreport
         dist < tol ? print("✓ ($iter) ") : print("($(@sprintf("%0.3g", dist)) after $iter) ")

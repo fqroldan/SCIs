@@ -3,4 +3,5 @@ using QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, 
 include("sci_inf.jl")
 include("spreads.jl")
 include("simul.jl")
+include("compstats.jl")
 include("DEPs.jl")

@@ -1,0 +1,328 @@
+\begin{thebibliography}{57}
+\newcommand{\enquote}[1]{`#1'}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{Adam and Woodford(2012)}]{AdamWoodford2012}
+Adam, K. and Woodford, M. (2012).
+\newblock \enquote{Robustly optimal monetary policy in a microfounded New
+  Keynesian model}.
+\newblock {\em Journal of Monetary Economics\/}, volume 59 (5), 468--487.
+
+\bibitem[{Aguiar and Amador(2014)}]{AguiarAmadorHandbook}
+Aguiar, M. and Amador, M. (2014).
+\newblock \enquote{Sovereign Debt}.
+\newblock {\em Handbook of International Economics\/}, volume~4, 647--87.
+
+\bibitem[{Aguiar and Amador(2019)}]{AguiarAmador2019}
+Aguiar, M. and Amador, M. (2019).
+\newblock \enquote{A Contraction for Sovereign Debt Models}.
+\newblock {\em Journal of Economic Theory\/}.
+
+\bibitem[{Aguiar and Amador(2020)}]{AguiarAmador2020}
+Aguiar, M. and Amador, M. (2020).
+\newblock \enquote{Self-Fulfilling Debt Dilution: Maturity and Multiplicity in
+  Debt Models}.
+\newblock {\em American Economic Review\/}.
+
+\bibitem[{Aguiar et~al.(2020)Aguiar, Amador, and
+  Fourakis}]{AguiarAmadorFourakis2020}
+Aguiar, M., Amador, M., and Fourakis, S. (2020).
+\newblock \enquote{On the Welfare Losses from External Sovereign Borrowing}.
+\newblock {\em IMF Economic Review\/}, volume~68, 163--194.
+
+\bibitem[{Aguiar et~al.(2016)Aguiar, Chatterjee, Cole, and Stangebye}]{ACCS}
+Aguiar, M., Chatterjee, S., Cole, H., and Stangebye, Z. (2016).
+\newblock \enquote{Quantitative Models of Sovereign Debt Crises}.
+\newblock {\em Handbook of Macroeconomics\/}, volume~2B, 1697--1755.
+\newblock Chapter 21.
+
+\bibitem[{Aguiar and Gopinath(2006)}]{AG_06}
+Aguiar, M. and Gopinath, G. (2006).
+\newblock \enquote{Defaultable debt, interest rates and the current account}.
+\newblock {\em Journal of International Economics\/}, volume~69, 64--83.
+
+\bibitem[{Aguiar and Gopinath(2007)}]{AG_cycles}
+Aguiar, M. and Gopinath, G. (2007).
+\newblock \enquote{Emerging markets business cycles: the cycle is the trend}.
+\newblock {\em Journal of Political Economy\/}, volume 115, no.~1, 69--102.
+
+\bibitem[{Alvarez et~al.(2011)Alvarez, Marques, and Toledo}]{Alvarez}
+Alvarez, F.~A., Marques, L.~B., and Toledo, M. (2011).
+\newblock \enquote{Business Cycles in Emerging Markets: The Role of Durable
+  Goods and Financial Frictions}.
+\newblock Manuscript, Universidad Carlos III.
+
+\bibitem[{Amador(2012)}]{Amador2012}
+Amador, M. (2012).
+\newblock \enquote{Sovereign Debt and The Tragedy of the Commons}.
+\newblock {\em Mimeo\/}.
+
+\bibitem[{Arellano(2008)}]{Arellano05}
+Arellano, C. (2008).
+\newblock \enquote{Default Risk and Income Fluctuations in Emerging Economies}.
+\newblock {\em American Economic Review\/}, volume 98(3), 690--712.
+
+\bibitem[{Arellano and Ramanarayanan(2012)}]{ArellanoRamanarayanan}
+Arellano, C. and Ramanarayanan, A. (2012).
+\newblock \enquote{Default and the Maturity Structure in Sovereign Bonds}.
+\newblock {\em Journal of Political Economy\/}, volume 120, no.~2, 187--232.
+
+\bibitem[{Backus et~al.(1992)Backus, Kehoe, and Kydland}]{BackusKehoeKydland92}
+Backus, D., Kehoe, P., and Kydland, F. (1992).
+\newblock \enquote{International real business cycles}.
+\newblock {\em Journal of Political Economy\/}, volume 100 (4).
+
+\bibitem[{Barillas et~al.(2009)Barillas, Hansen, and
+  Sargent}]{BarillasHansenSargent}
+Barillas, F., Hansen, L., and Sargent, T. (2009).
+\newblock \enquote{Doubts or Variability?}
+\newblock {\em Journal of Economic Theory\/}, volume 144, no.~6, 2388--2418.
+
+\bibitem[{Benford et~al.(2018)Benford, Ostry, and Shiller}]{voxeubook}
+Benford, J., Ostry, J.~D., and Shiller, R. (2018).
+\newblock {\em Sovereign GDP-Linked Bonds: Rationale and Design\/}.
+\newblock A VoxEU.org eBook, London: CEPR Press.
+
+\bibitem[{Benjamin and Wright(2008)}]{Benjamin}
+Benjamin, D. and Wright, M. L.~J. (2008).
+\newblock \enquote{Recovery Before Redemption? A Theory of Delays in Sovereign
+  Debt Renegotiations}.
+\newblock Manuscript.
+
+\bibitem[{Beraja(2020)}]{Beraja2020}
+Beraja, M. (2020).
+\newblock \enquote{A Semi-structural Methodology for Policy Counterfactuals}.
+\newblock {\em Mimeo\/}.
+
+\bibitem[{Bertinatto et~al.(2017)Bertinatto, Gomtsyan, Sandleris, Sapriza, and
+  Taddei}]{SandlerisSaprizaTaddei2017}
+Bertinatto, L., Gomtsyan, D., Sandleris, G., Sapriza, H., and Taddei, F.
+  (2017).
+\newblock \enquote{Indexed Sovereign Debt: An Applied Framework}.
+\newblock {\em Mimeo\/}.
+
+\bibitem[{Blanchard et~al.(2016)Blanchard, Mauro, and Acalin}]{Blanchard2016}
+Blanchard, O., Mauro, P., and Acalin, J. (2016).
+\newblock \enquote{The Case for Growth-Indexed Bonds in Advanced Economies
+  Today}.
+\newblock Policy brief, Peterson Institute for International Economics.
+
+\bibitem[{Borensztein and Mauro(2004)}]{BorenszteinMauro2004}
+Borensztein, E. and Mauro, P. (2004).
+\newblock \enquote{GDP-indexed bonds}.
+\newblock {\em Economic Policy\/}, pages 165--216.
+
+\bibitem[{Boz et~al.(2011)Boz, Daude, and Durdu}]{Bora}
+Boz, E., Daude, C., and Durdu, B. (2011).
+\newblock \enquote{Emerging Market Business Cycles Revisited: Learning about
+  the Trend}.
+\newblock {\em Journal of Monetary Economics\/}, volume~58, 616--631.
+
+\bibitem[{Cantor and Packer(1996)}]{CantorPacker1996}
+Cantor, R. and Packer, F. (1996).
+\newblock \enquote{Sovereign risk assessment and agency credit ratings}.
+\newblock {\em European Financial Management\/}, volume~2, no.~2, 247--256.
+
+\bibitem[{Chatterjee and Eyigungor(2012)}]{Chatty}
+Chatterjee, S. and Eyigungor, B. (2012).
+\newblock \enquote{Maturity, Indebtedness, and Default Risk}.
+\newblock {\em American Economic Review\/}, volume 102, no.~6, 2674--99.
+
+\bibitem[{Costa et~al.(2008)Costa, Chamon, and Ricci}]{ChamonCostaRicci2008}
+Costa, A., Chamon, M., and Ricci, L. (2008).
+\newblock \enquote{{Is There a Novelty Premium on New Financial Instruments?
+  The Argentine Experience with GDP-Indexed Warrants}}.
+\newblock IMF Working Papers 08/109, International Monetary Fund.
+
+\bibitem[{D'Erasmo et~al.(2016)D'Erasmo, Mendoza, and
+  Zhang}]{DerasmoMendozaZhang}
+D'Erasmo, P., Mendoza, E., and Zhang, J. (2016).
+\newblock \enquote{Quantitative Models of Sovereign Debt Crises}.
+\newblock {\em Handbook of Macroeconomics\/}, volume~2B, 2493--2597.
+\newblock Chapter 32.
+
+\bibitem[{Durdu(2009)}]{Durdu}
+Durdu, B. (2009).
+\newblock \enquote{Quantitative implications of indexed bonds in small open
+  economies}.
+\newblock {\em Journal of Economic Dynamics \& Control\/}, volume~33, 883--902.
+
+\bibitem[{Dvorkin et~al.(2021)Dvorkin, Sanchez, Sapriza, and
+  Yurdagul}]{DvorkinSanchezSaprizaYurdagul}
+Dvorkin, M., Sanchez, J.~M., Sapriza, H., and Yurdagul, E. (2021).
+\newblock \enquote{Sovereign Debt Restructurings}.
+\newblock {\em AEJ: Macroeconomics\/}.
+
+\bibitem[{Eaton and Gersovitz(1981)}]{Eaton81}
+Eaton, J. and Gersovitz, M. (1981).
+\newblock \enquote{Debt with potential repudiation: theoretical and empirical
+  analysis}.
+\newblock {\em Review of Economic Studies\/}, volume~48, 289--309.
+
+\bibitem[{Farhi and Werning(2017)}]{FarhiWerning2017}
+Farhi, E. and Werning, I. (2017).
+\newblock \enquote{Fiscal Unions}.
+\newblock {\em American Economic Review\/}, volume 107 (12), 3788--3834.
+
+\bibitem[{Ferriere and Karantounias(2019)}]{FerriereKarantounias}
+Ferriere, A. and Karantounias, A. (2019).
+\newblock \enquote{Fiscal Austerity in Ambiguous Times}.
+\newblock {\em American Economic Journal: Macroeconomics\/}, volume~11, no.~1,
+  89--131.
+
+\bibitem[{Grosse~Steffen and Podstawski(2017)}]{GrossePodstawski2017}
+Grosse~Steffen, C. and Podstawski, M. (2017).
+\newblock \enquote{{Ambiguity and Time-Varying Risk Aversion in Sovereign Debt
+  Markets}}.
+\newblock VfS Annual Conference 2017 (Vienna): Alternative Structures for Money
+  and Banking 168101, Verein für Socialpolitik / German Economic Association.
+
+\bibitem[{Hansen and Sargent(2001)}]{HansenSargent2001}
+Hansen, L.~P. and Sargent, T.~J. (2001).
+\newblock \enquote{Robust Control and Model Uncertainty}.
+\newblock {\em American Economic Review\/}, volume~91, no.~2, 60--66.
+
+\bibitem[{Hansen and Sargent(2016)}]{HansenSargent2011}
+Hansen, L.~P. and Sargent, T.~J. (2016).
+\newblock {\em Robustness\/}.
+\newblock Princeton University Press.
+\newblock ISBN 9780691170978.
+
+\bibitem[{Hatchondo and Martinez(2009)}]{JIE}
+Hatchondo, J.~C. and Martinez, L. (2009).
+\newblock \enquote{Long-duration bonds and sovereign defaults}.
+\newblock {\em Journal of International Economics\/}, volume~79, 117--125.
+
+\bibitem[{Hatchondo and Martinez(2012)}]{HMindexed2012}
+Hatchondo, J.~C. and Martinez, L. (2012).
+\newblock \enquote{On the Benefits of GDP-Indexed Government Debt: Lessons from
+  a Model of Sovereign Defaults}.
+\newblock {\em Economic Quarterly\/}, volume~98, 139--157.
+\newblock No. 2.
+
+\bibitem[{Hatchondo et~al.(2007)Hatchondo, Martinez, and Sapriza}]{EQ_august}
+Hatchondo, J.~C., Martinez, L., and Sapriza, H. (2007).
+\newblock \enquote{Quantitative Models of Sovereign Default and the Threat of
+  Financial Exclusion}.
+\newblock {\em Economic Quarterly\/}, volume~93, 251--286.
+\newblock No. 3.
+
+\bibitem[{Hatchondo et~al.(2010)Hatchondo, Martinez, and Sapriza}]{nota}
+Hatchondo, J.~C., Martinez, L., and Sapriza, H. (2010).
+\newblock \enquote{Quantitative properties of sovereign default models:
+  solution methods matter}.
+\newblock {\em Review of Economic Dynamics\/}, volume~13, no.~4, 919--933.
+\newblock Doi:10.1016/j.red.2010.03.001.
+
+\bibitem[{Hatchondo et~al.(2016)Hatchondo, Martinez, and Sosa-Padilla}]{HMSP16}
+Hatchondo, J.~C., Martinez, L., and Sosa-Padilla, C. (2016).
+\newblock \enquote{Debt Dilution and Sovereign Default Risk}.
+\newblock {\em Journal of Political Economy\/}, volume 124, 1383--1422.
+
+\bibitem[{Igan et~al.(2021)Igan, Kim, and Levy}]{Taehoon}
+Igan, D., Kim, T., and Levy, A. (2021).
+\newblock \enquote{The Premia on State-Contingent Debt Instruments: Just
+  Novelty or Something More?}
+\newblock {\em Mimeo\/}.
+
+\bibitem[{IMF(2017)}]{IMFpolicy2017}
+IMF (2017).
+\newblock \enquote{State-Contingent Debt Instruments for Sovereigns}.
+\newblock {\em IMF Policy Paper\/}.
+
+\bibitem[{IMF(2020)}]{IMF2020}
+IMF (2020).
+\newblock \enquote{The Role of State-Contingent Debt Instruments in Sovereign
+  Debt Restructurings}.
+\newblock Staff discussion notes, International Monetary Fund.
+
+\bibitem[{Kim and Ostry(2021)}]{KimOstry2021}
+Kim, J.~I. and Ostry, J. (2021).
+\newblock \enquote{Boosting Fiscal Space: The Roles of GDP-Linked Debt and
+  Longer Maturities}.
+\newblock {\em Economic Policy\/}.
+
+\bibitem[{Krugman(1988)}]{Krugman88}
+Krugman, P. (1988).
+\newblock \enquote{Financing vs. forgiving a debt overhang}.
+\newblock {\em Journal of Development Economics\/}, volume 29 (3), 253--268.
+
+\bibitem[{Lizarazo(2013)}]{Lizarazo_default}
+Lizarazo, S. (2013).
+\newblock \enquote{Sovereign risk and risk averse international investors}.
+\newblock {\em Journal of International Economics\/}, volume~89, no.~2,
+  317--330.
+
+\bibitem[{Montamat and Roch(2021)}]{MontamatRoch}
+Montamat, G. and Roch, F. (2021).
+\newblock \enquote{Robust Optimal Macroprudential Policy}.
+\newblock {\em Mimeo\/}.
+
+\bibitem[{Moretti(2020)}]{Moretti2020}
+Moretti, M. (2020).
+\newblock \enquote{Financial Innovation and Liquidity Premia in Sovereign
+  Markets: The Case of GDP-Linked Bonds}.
+\newblock {\em Mimeo\/}.
+
+\bibitem[{Neumeyer and Perri(2005)}]{Neumeyer05}
+Neumeyer, P. and Perri, F. (2005).
+\newblock \enquote{Business cycles in emerging economies: the role of interest
+  rates}.
+\newblock {\em Journal of Monetary Economics\/}, volume~52, 345--380.
+
+\bibitem[{Obstfeld and Peri(1998)}]{ObstfeldPeri1998}
+Obstfeld, M. and Peri, G. (1998).
+\newblock \enquote{Regional Non-Adjustment and Fiscal Policy: Lessons for EMU}.
+\newblock {\em Economic Policy\/}.
+
+\bibitem[{Pina(2020)}]{databaseSCI}
+Pina, G. (2020).
+\newblock \enquote{State-Contingent Sovereign Bonds: A new database}.
+\newblock {mimeo}.
+
+\bibitem[{Pouzo and Presno(2016)}]{PouzoPresno2016}
+Pouzo, D. and Presno, I. (2016).
+\newblock \enquote{Sovereign Default Risk and Uncertainty Premia}.
+\newblock {\em American Economic Journal: Macroeconomics\/}, volume~8, no.~3,
+  230--66.
+
+\bibitem[{Shiller(1993)}]{Shillerbook}
+Shiller, R. (1993).
+\newblock {\em Macro Markets: Creating Institutions for Managing Society’s
+  Largest Economic Risks\/}.
+\newblock Clarendon Press, Oxford.
+
+\bibitem[{Sosa-Padilla and Sturzenegger(2021)}]{SosaPadillaStruzenegger2021}
+Sosa-Padilla, C. and Sturzenegger, F. (2021).
+\newblock \enquote{Does It Matter How Central Banks Accumulate Reserves?
+  Evidence from Sovereign Spreads}.
+\newblock Working Paper 28973, National Bureau of Economic Research.
+
+\bibitem[{Tauchen(1986)}]{Tauchen}
+Tauchen, G. (1986).
+\newblock \enquote{Finite State Markov-Chain Approximation to Univariate and
+  Vector Autoregressions}.
+\newblock {\em Economic Letters\/}, volume~20, 177--181.
+
+\bibitem[{{United Nations}(2006)}]{UN2006}
+{United Nations} (2006).
+\newblock \enquote{GDP-Indexed Bonds: Making It Happen}.
+\newblock {Economic \& Social Affairs}, United Nations.
+
+\bibitem[{Uribe and Yue(2006)}]{drives}
+Uribe, M. and Yue, V. (2006).
+\newblock \enquote{Country spreads and emerging countries: Who drives whom?}
+\newblock {\em Journal of International Economics\/}, volume~69, 6--36.
+
+\bibitem[{Young(2012)}]{Young12}
+Young, E. (2012).
+\newblock \enquote{Robust policymaking in the face of sudden stops}.
+\newblock {\em Journal of Monetary Economics\/}.
+
+\bibitem[{Yue(2010)}]{Yue05}
+Yue, V. (2010).
+\newblock \enquote{Sovereign default and debt renegotiation}.
+\newblock {\em Journal of International Economics\/}, volume~80, no.~2,
+  176--187.
+
+\end{thebibliography}
