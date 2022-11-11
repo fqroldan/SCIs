@@ -88,7 +88,7 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     return v, def_p, ct, bp, yp, new_def, q, spread, spread_RE, spread_MTI
 end
 
-function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true)
+function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true, b0 = 0.0, y0 = mean(dd.gr[:y]))
 
     cd_sep = cond_defs + separation
 
@@ -111,8 +111,8 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
     itp_c = interpolate(knots, dd.gc, Gridded(Linear()))
 
     Threads.@threads for jp in eachindex(pv)
-        b0 = 0.0
-        y0 = mean(dd.gr[:y])
+        b0 = b0
+        y0 = y0
         def = false
         new_def = false
 
@@ -473,6 +473,28 @@ function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=2_000, 
 
     table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
 end
+
+function simul_cons(dd::DebtMod; T=150, K=10_000)
+    
+    Random.seed!(1989)
+    ϵvv, ξvv = simulshocks(T, K);
+
+    itp_yield = get_yields_itp(dd);
+    itp_qRE, itp_qdRE = q_RE(dd, do_calc = false);
+    itp_spr_og = itp_mti(dd, do_calc = false);
+
+    Ny = length(dd.gr[:y])
+    c_bar = Vector{Vector{Float64}}(undef, Ny)
+
+    for (jy, yv) in enumerate(dd.gr[:y])
+        pv, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv, burn_in = 0, stopdef = false, b0 = 0., y0 = yv)
+
+        c_all = [ifelse(pp[:ζ, t] == 2, pp[:y, t], pp[:c, t]) for t in 1:length(pv[1][:ζ]), pp in pv]
+
+        c_bar[jy] = mean(c_all, dims = 2) |> vec
+    end
+    return c_bar
+end    
 
 function solve_eval_α(dd::DebtMod, α)
     dd.pars[:α] = α
