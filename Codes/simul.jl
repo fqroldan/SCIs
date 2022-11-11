@@ -437,11 +437,8 @@ function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_
     ϵvv, ξvv = simulshocks(cond_T, cond_K);
 
     itp_yield = get_yields_itp(dd);
-    showtable && print("yields ✓ ")
     itp_qRE, itp_qdRE = q_RE(dd, do_calc = do_calc);
-    showtable && print("RE ✓ ")
     itp_spr_og = itp_mti(dd, do_calc = do_calc);
-    showtable && print("MTI ✓\n")
 
     pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
 
