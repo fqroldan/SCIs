@@ -217,7 +217,7 @@ function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = 
     while dist > tol && iter < maxiter
         iter += 1
 
-        v_lender_iter!(dd, vL)
+        v_lender_iter!(dd, vL, q, 1, 1)
         q_iter_local!(new_q, new_qD, q, qD, dd, vL)
         
         dist_qR = norm(new_q - q) / max(1, norm(q))
