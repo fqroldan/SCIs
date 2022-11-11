@@ -259,11 +259,11 @@ function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
     return q, qD
 end
 
-function itp_mti(dd::DebtMod; do_cal=true)
+function itp_mti(dd::DebtMod; do_calc=true)
     
     spr_og = zeros(length(dd.gr[:b]), length(dd.gr[:y]), 1:2)
     
-    if do_cal
+    if do_calc
         q, qD = q_SDF_og(dd)
         itp_yield = get_yields_itp(dd::Default, α = 1, τ = 1)
 
