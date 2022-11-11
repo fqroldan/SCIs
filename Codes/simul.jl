@@ -476,7 +476,7 @@ end
 
 function simul_cons(dd::DebtMod; T=150, K=10_000)
     
-    Random.seed!(1989)
+    Random.seed!(25)
     ϵvv, ξvv = simulshocks(T, K);
 
     itp_yield = get_yields_itp(dd);
@@ -1076,3 +1076,71 @@ function mpe_simul!(dd::DebtMod; K = 3, min_iter = 25, maxiter = 600, tol = 1e-6
 end
 
 # pmat, DEP = simul_dist(dd, K = 1_000, burn_in = 1_000, T = 240); DEP
+
+function param_table(dd::DebtMod)
+
+    τ = ifelse(dd.pars[:τ] <= minimum(dd.gr[:y]), -Inf, dd.pars[:τ])
+
+    rownames = [
+        "Sovereign's risk aversion",
+        "Interest rate",
+        "Income autocorrelation coefficient",
+        "Standard deviation of \$y_{t}\$",
+        "Reentry probability",
+        "Duration of debt",
+        "Discount factor",
+        "Default cost: linear",
+        "Default cost: quadratic",
+        "Degree of robustness",
+        "Linear coupon indexation",
+        "Repayment threshold"
+    ]
+
+    param_names = [
+        "\$\\gamma\$",
+        "\$r\$",
+        "\$\\rho\$",
+        "\$\\sigma_{\\epsilon}\$",
+        "\$\\psi\$",
+        "\$\\delta\$",
+        "\$\\beta\$",
+        "\$d_0\$",
+        "\$d_1\$",
+        "\$\\theta\$",
+        "\$\\alpha\$",
+        "\$\\tau\$",
+    ]
+
+    params = [
+        dd.pars[:γ],
+        dd.pars[:r],
+        dd.pars[:ρy],
+        dd.pars[:σy],
+        dd.pars[:ψ],
+        dd.pars[:ρ],
+        dd.pars[:β],
+        dd.pars[:d1],
+        dd.pars[:d2],
+        dd.pars[:θ],
+        dd.pars[:α],
+        τ
+    ]
+
+    textpad = maximum(length(name) for name in rownames) + 2
+    parpad = maximum(length(par) for par in param_names) + 2
+    
+    table = ""
+    for jp in eachindex(rownames)
+        table *= rpad(rownames[jp], textpad, " " ) * "& "
+        table *= rpad(param_names[jp], parpad, " ") * "& "
+        table *= "$(@sprintf("%0.4g",params[jp]))"
+        table *= "   \\\\\n"
+    end
+    return table
+end
+
+function save_param_table(dd; filename="table3.txt")
+    table = param_table(dd)
+
+    write(filename, table)
+end
