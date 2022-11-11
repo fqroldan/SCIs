@@ -49,7 +49,7 @@ function q_RE(dd::Default, r=dd.pars[:r]; tol=1e-6, maxiter=2_000, verbose=false
             q_star  .= new_q
             q_stard .= new_qd
 
-            print("q_RE ✓ ")
+            verbose && print("Iteration $iter, d = $dist\n")
         end
     end
 
@@ -201,7 +201,7 @@ function q_iter_local!(new_q, new_qd, old_q, old_qD, dd::Default, vL)
     end
 end
 
-function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500)
+function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
 
     iter = 0
     dist = 1+tol
@@ -228,10 +228,11 @@ function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500)
         q  .= new_q
         qD .= new_qD
     end
+    verbose && print("Done in $iter iterations")
     return q, qD
 end
 
-function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500)
+function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
     iter = 0
     dist = 1+tol
 
@@ -254,6 +255,7 @@ function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500)
         q  .= new_q
         qD .= new_qD
     end
+    verbose && print("Done in $iter iterations")
     return q, qD
 end
 
@@ -272,7 +274,6 @@ function itp_mti(dd::DebtMod; do_calc=true)
             spr_og[jb, jy, 1] = itp_yield(q[jb, jy], yv)
             spr_og[jb, jy, 2] = itp_yield(qD[jb, jy], yv)
         end
-        print("q_MTI ✓ ")
     end
 
     knts = (dd.gr[:b], dd.gr[:y], 1:2)
