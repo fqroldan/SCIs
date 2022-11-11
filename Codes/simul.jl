@@ -411,8 +411,11 @@ function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_00
     ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
 
     itp_yield = get_yields_itp(dd);
+    showtable && print("yields ✓ ")
     itp_qRE, itp_qdRE = q_RE(dd, do_calc = do_calc);
+    showtable && print("RE ✓ ")
     itp_spr_og = itp_mti(dd, do_calc = do_calc);
+    showtable && print("MTI ✓\n")
 
     pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
 
@@ -423,7 +426,7 @@ function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_00
     objective, targets_vec, moments_vec
 end
 
-function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, savetable=false, showtable=(savetable || false), smalltable=false)
+function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, savetable=false, showtable=(savetable || false), smalltable=false, do_calc = showtable)
 
     # keys = [:mean_spr,
     # # :mean_sp,
@@ -435,9 +438,9 @@ function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_
 
     itp_yield = get_yields_itp(dd);
     showtable && print("yields ✓ ")
-    itp_qRE, itp_qdRE = q_RE(dd);
+    itp_qRE, itp_qdRE = q_RE(dd, do_calc = do_calc);
     showtable && print("RE ✓ ")
-    itp_spr_og = itp_mti(dd);
+    itp_spr_og = itp_mti(dd, do_calc = do_calc);
     showtable && print("MTI ✓\n")
 
     pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
