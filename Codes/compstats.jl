@@ -6,7 +6,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     Random.seed!(25)
     w, t, m, ϵvv, ξvv = calib_targets(dd, smalltable=smalltable, showtable=showtable)
 
-    
+
     Ny = length(dd.gr[:y])
     v_noncont = welfare(dd)
     c_noncont = cons_equiv(v_noncont, dd)
@@ -55,12 +55,12 @@ function comp_t5(dd::DebtMod)
 
     print("Solving original model with θ = $(dd.pars[:θ])\n")
     save("dd_comp_theta.jld2", "dd", dd)
-    rob_n, rob_l, rob_t = comp_argbond(dd, show_simul=true, othersimuls=true, DEP = true)
+    rob_n, rob_l, rob_t = comp_argbond(dd, DEP = true)
 
     dd = load("dd_comp_theta.jld2", "dd")
     dd.pars[:θ] = 0
     print("Solving same model with rational expectations\n")
-    rat_n, rat_l, rat_t = comp_argbond(dd, show_simul=true, othersimuls=true)
+    rat_n, rat_l, rat_t = comp_argbond(dd)
 
     return rob_n, rob_l, rob_t, rat_n, rat_l, rat_t
 end
