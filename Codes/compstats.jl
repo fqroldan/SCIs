@@ -4,9 +4,9 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     mpe_simul!(dd, maxiter=500, K=0, simul=false)
 
     Random.seed!(25)
-    w, t, m, ϵvv, ξvv = calib_targets(dd, cond_K=7_500, uncond_K=10_000, smalltable=smalltable, showtable=showtable)
+    w, t, m, ϵvv, ξvv = calib_targets(dd, smalltable=smalltable, showtable=showtable)
 
-
+    
     Ny = length(dd.gr[:y])
     v_noncont = welfare(dd)
     c_noncont = cons_equiv(v_noncont, dd)
