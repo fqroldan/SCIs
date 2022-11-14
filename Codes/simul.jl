@@ -408,9 +408,18 @@ function eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
     objective, targets_vec, moments_vec#, dict
 end
 
+
+function calib_targets(dd::DebtMod; cond_T=2000, cond_K=1_000, kwargs...)
+
+    ϵvv, ξvv = simulshocks(cond_T, cond_K);
+
+    objective, targets_vec, moments_vec = calib_targets(dd, ϵvv, ξvv; kwargs...)
+    
+    objective, targets_vec, moments_vec, ϵvv, ξvv
+end
+
 function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, savetable=false, showtable=(savetable || false), smalltable=false, do_calc = showtable)
 
-    Random.seed!(25)
     ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
 
     itp_yield = get_yields_itp(dd);
@@ -427,29 +436,6 @@ function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_00
     objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
 
     objective, targets_vec, moments_vec
-end
-
-function calib_targets(dd::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, savetable=false, showtable=(savetable || false), smalltable=false, do_calc = showtable)
-
-    # keys = [:mean_spr,
-    # # :mean_sp,
-    # :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
-
-    Random.seed!(25)
-    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
-    ϵvv, ξvv = simulshocks(cond_T, cond_K);
-
-    itp_yield = get_yields_itp(dd);
-    itp_qRE, itp_qdRE = q_RE(dd, do_calc = do_calc);
-    itp_spr_og = itp_mti(dd, do_calc = do_calc);
-
-    pv_uncond, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
-
-    pv, ϵvv, ξvv = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
-
-    objective, targets_vec, moments_vec = eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
-
-    objective, targets_vec, moments_vec, ϵvv, ξvv
 end
 
 function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, kwargs...)
