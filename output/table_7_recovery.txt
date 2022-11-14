@@ -13,6 +13,7 @@ Corr(y,tb/y)    & -0.77     & -0.542    \\
 Corr(y,spread)  & -0.72     & -0.75     \\
 Default Prob    & 5.4       & 5.85      \\
 Welfare Gains   &  -        &   -       \\
+DEP             &           &  41.7\%   \\
 DEP computed on 8.75 years (35 periods): 41.7%
 DEP computed on 60.0 years (240 periods): 28.1%
 
@@ -29,6 +30,7 @@ Corr(y,tb/y)    & -0.77     & -0.677    \\
 Corr(y,spread)  & -0.72     & -0.822    \\
 Default Prob    & 5.4       & 4.72      \\
 Welfare Gains   &  -        &  0.16\%   \\
+DEP             &           &  38.6\%   \\
 DEP computed on 8.75 years (35 periods): 38.6%
 DEP computed on 60.0 years (240 periods): 25.6%
 
@@ -45,6 +47,7 @@ Corr(y,tb/y)    & -0.77     & 0.472     \\
 Corr(y,spread)  & -0.72     & -0.811    \\
 Default Prob    & 5.4       & 0         \\
 Welfare Gains   &  -        & -0.84\%   \\
+DEP             &           &  33.1\%   \\
 DEP computed on 8.75 years (35 periods): 33.1%
 DEP computed on 60.0 years (240 periods): 19.8%
 
@@ -63,6 +66,7 @@ Corr(y,tb/y)    & -0.77     & -0.35     \\
 Corr(y,spread)  & -0.72     & -0.655    \\
 Default Prob    & 3         & 12        \\
 Welfare Gains   &  -        &   -       \\
+DEP             &           &  -        \\
 
 rational expectations, linear
                 & Data      & Benchmark \\ \midrule
@@ -77,6 +81,7 @@ Corr(y,tb/y)    & -0.77     & -0.355    \\
 Corr(y,spread)  & -0.72     & -0.672    \\
 Default Prob    & 3         & 12.1      \\
 Welfare Gains   &  -        & 0.18\%    \\
+DEP             &           &  -        \\
 
 rational expectations, threshold
                 & Data      & Benchmark \\ \midrule
@@ -91,3 +96,4 @@ Corr(y,tb/y)    & -0.77     & 0.324     \\
 Corr(y,spread)  & -0.72     & -0.403    \\
 Default Prob    & 3         & 0.84      \\
 Welfare Gains   &  -        & 1.3\%     \\
+DEP             &           &  -        \\
