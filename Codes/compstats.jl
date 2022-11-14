@@ -60,6 +60,7 @@ function comp_t5(dd::DebtMod; showtable=false)
     dd = load("dd_comp_theta.jld2", "dd")
     dd.pars[:θ] = 0
     print("Solving same model with rational expectations\n")
+    mpe_simul!(dd, maxiter=500, K=8, simul=false)
     rat_n, rat_l, rat_t = comp_argbond(dd, showtable=showtable)
 
     return rob_n, rob_l, rob_t, rat_n, rat_l, rat_t
