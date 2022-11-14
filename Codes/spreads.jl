@@ -31,6 +31,10 @@ function q_RE(dd::Default, r=dd.pars[:r]; tol=1e-6, maxiter=2_000, verbose=false
     dist = 1 + tol
     iter = 0
 
+    if isapprox(dd.pars[:θ], 0)
+        do_calc = false
+    end
+
     q_star  = copy(dd.q)
     q_stard = copy(dd.qD)
     new_q   = similar(q_star)
