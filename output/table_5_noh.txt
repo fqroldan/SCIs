@@ -64,6 +64,7 @@ Corr(y,tb/y)    & -0.673   & 0.542     & -0.603   \\
 Corr(y,spread)  & -0.722   & 0.141     & -0.743   \\
 Default Prob    & 6        & 1.68      & 5.59     \\
 Welfare Gains   &   -      &  0.94\%   &  0.22\%  \\
+DEP             & -        &  -        &  -       \\
 
 Table robustness after
 
