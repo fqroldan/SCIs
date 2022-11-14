@@ -463,35 +463,6 @@ function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=2_000, 
     table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
 end
 
-function simul_cons(dd::DebtMod; T=150, K=10_000)
-    
-    Random.seed!(25)
-    ϵvv, ξvv = simulshocks(T, K);
-
-    itp_yield = get_yields_itp(dd);
-    itp_qRE, itp_qdRE = q_RE(dd, do_calc = false);
-    itp_spr_og = itp_mti(dd, do_calc = false);
-
-    Ny = length(dd.gr[:y])
-    c_bar = Vector{Vector{Float64}}(undef, Ny)
-
-    for (jy, yv) in enumerate(dd.gr[:y])
-        pv, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv, burn_in = 0, stopdef = false, B0 = 0., Y0 = yv)
-
-        c_all = [ifelse(pp[:ζ, t] == 2, pp[:y, t], pp[:c, t]) for t in 1:length(pv[1][:ζ]), pp in pv]
-
-        c_bar[jy] = mean(c_all, dims = 2) |> vec
-    end
-    return c_bar
-end    
-
-function solve_eval_α(dd::DebtMod, α)
-    dd.pars[:α] = α
-    Ny = length(dd.gr[:y])
-    mpe!(dd)
-    return dd.v[:V][1, ceil(Int, Ny / 2)]
-end
-
 
 function update_dd!(dd::DebtMod, params::Dict)
     for (key, val) in params
