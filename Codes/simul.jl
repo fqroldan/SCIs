@@ -456,6 +456,7 @@ function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=10_000,
     
     itp_yield_RE = get_yields_itp(dd_RE)
     itp_qRE, itp_qdRE = q_RE(dd_RE, do_calc = true);
+    itp_spr_og = itp_mti(dd, do_calc = false);
 
     pv_uncond_RE, _ = simulvec(dd_RE, itp_yield_RE, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
     pv_RE, _ = simulvec(dd_RE, itp_yield_RE, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
