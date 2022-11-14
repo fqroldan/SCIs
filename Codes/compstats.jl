@@ -50,17 +50,17 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     return v_noncont, v_linear, v_threshold
 end
 
-function comp_t5(dd::DebtMod)
+function comp_t5(dd::DebtMod, showtable=false)
     @assert dd.pars[:θ] >= 1e-3
 
     print("Solving original model with θ = $(dd.pars[:θ])\n")
     save("dd_comp_theta.jld2", "dd", dd)
-    rob_n, rob_l, rob_t = comp_argbond(dd, DEP = true)
+    rob_n, rob_l, rob_t = comp_argbond(dd, DEP = true, showtable=showtable)
 
     dd = load("dd_comp_theta.jld2", "dd")
     dd.pars[:θ] = 0
     print("Solving same model with rational expectations\n")
-    rat_n, rat_l, rat_t = comp_argbond(dd)
+    rat_n, rat_l, rat_t = comp_argbond(dd, showtable=showtable)
 
     return rob_n, rob_l, rob_t, rat_n, rat_l, rat_t
 end
