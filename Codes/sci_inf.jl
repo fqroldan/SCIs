@@ -261,7 +261,7 @@ function borrowing_limit(itp_def, dd::DebtMod)
     return bmax
 end
 
-function make_itp_vp(dd::DebtMod, jy, mat)
+function make_vp(dd, jy, mat)
     Ev = similar(dd.gr[:b])
     for jbp in eachindex(dd.gr[:b])
         Evc = 0.0
@@ -272,7 +272,11 @@ function make_itp_vp(dd::DebtMod, jy, mat)
         end
         Ev[jbp] = Evc
     end
+    return Ev
+end
 
+function make_itp_vp(dd::DebtMod, jy, mat)
+    Ev = make_vp(dd, jy, mat)
     interpolate((dd.gr[:b],), Ev, Gridded(Linear()))
 end
 
