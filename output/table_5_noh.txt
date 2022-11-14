@@ -11,8 +11,9 @@ Std(c)/Std(y)   & 0.87      & 1.33      \\
 Corr(y,c)       & 0.97      & 0.97      \\
 Corr(y,tb/y)    & -0.77     & -0.618    \\
 Corr(y,spread)  & -0.72     & -0.741    \\
-Default Prob    & 3         & 3.17      \\
+Default Prob    & 3         & 3.17\%    \\
 Welfare Gains   &  -        &   -       \\
+DEP             &           &  40.1\%   \\
 DEP computed on 8.75 years (35 periods): 40.1%
 DEP computed on 60.0 years (240 periods): 27.1%
 
@@ -27,9 +28,69 @@ Std(c)/Std(y)   & 0.87      & 1.29      \\
 Corr(y,c)       & 0.97      & 0.97      \\
 Corr(y,tb/y)    & -0.77     & -0.559    \\
 Corr(y,spread)  & -0.72     & -0.765    \\
-Default Prob    & 3         & 2.76      \\
+Default Prob    & 3         & 2.76\%    \\
 Welfare Gains   &  -        &  0.15\%   \\
+DEP             &           &  39.8\%   \\
+DEP computed on 8.75 years (35 periods): 39.8%
+DEP computed on 60.0 years (240 periods): 25.5%
+
+robustness, threshold
+& Data      & Benchmark \\ \midrule
+Spread          & 815       & 1650      \\
+o/w Spread RE   & NaN       & 18.7      \\
+Spread MTI      & NaN       & 1650      \\
+Std Spread      & 443       & 269       \\
+Debt            & 17.4      & 18.7      \\
+Std(c)/Std(y)   & 0.87      & 0.861     \\
+Corr(y,c)       & 0.97      & 0.899     \\
+Corr(y,tb/y)    & -0.77     & 0.469     \\
+Corr(y,spread)  & -0.72     & -0.634    \\
+Default Prob    & 3         & 0.12\%    \\
+Welfare Gains   &  -        & -1.16\%   \\
+DEP             &           &  32.8\%   \\
+DEP computed on 8.75 years (35 periods): 32.8%
+DEP computed on 60.0 years (240 periods): 14.4%
 
 
+rational expectations, noncontingent
+                & Data      & Benchmark \\ \midrule
+Spread          & 815       & 892       \\
+o/w Spread RE   & NaN       & 892       \\
+Spread MTI      & NaN       & 368       \\
+Std Spread      & 443       & 454       \\
+Debt            & 17.4      & 18.4      \\
+Std(c)/Std(y)   & 0.87      & 1.35      \\
+Corr(y,c)       & 0.97      & 0.973     \\
+Corr(y,tb/y)    & -0.77     & -0.673    \\
+Corr(y,spread)  & -0.72     & -0.722    \\
+Default Prob    & 3         & 6\%       \\
+Welfare Gains   &  -        &   -       \\
 
+rational expectations, linear
+                & Data      & Benchmark \\ \midrule
+Spread          & 815       & 752       \\
+o/w Spread RE   & NaN       & 752       \\
+Spread MTI      & NaN       & 343       \\
+Std Spread      & 443       & 337       \\
+Debt            & 17.4      & 19.1      \\
+Std(c)/Std(y)   & 0.87      & 1.32      \\
+Corr(y,c)       & 0.97      & 0.968     \\
+Corr(y,tb/y)    & -0.77     & -0.603    \\
+Corr(y,spread)  & -0.72     & -0.743    \\
+Default Prob    & 3         & 5.59\%    \\
+Welfare Gains   &  -        &  0.22\%   \\
+
+rational expectations, threshold
+& Data      & Benchmark \\ \midrule
+Spread          & 815       & 382       \\
+o/w Spread RE   & NaN       & 382       \\
+Spread MTI      & NaN       & 384       \\
+Std Spread      & 443       & 156       \\
+Debt            & 17.4      & 33.5      \\
+Std(c)/Std(y)   & 0.87      & 0.871     \\
+Corr(y,c)       & 0.97      & 0.479     \\
+Corr(y,tb/y)    & -0.77     & 0.564     \\
+Corr(y,spread)  & -0.72     & -0.248    \\
+Default Prob    & 3         & 2.15\%    \\
+Welfare Gains   &  -        &  0.82\%   \\
 
