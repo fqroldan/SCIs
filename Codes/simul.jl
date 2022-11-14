@@ -476,7 +476,7 @@ function simul_cons(dd::DebtMod; T=150, K=10_000)
     c_bar = Vector{Vector{Float64}}(undef, Ny)
 
     for (jy, yv) in enumerate(dd.gr[:y])
-        pv, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv, burn_in = 0, stopdef = false, b0 = 0., y0 = yv)
+        pv, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv, burn_in = 0, stopdef = false, B0 = 0., Y0 = yv)
 
         c_all = [ifelse(pp[:ζ, t] == 2, pp[:y, t], pp[:c, t]) for t in 1:length(pv[1][:ζ]), pp in pv]
 
