@@ -3,7 +3,6 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
 
     mpe_simul!(dd, tol = 5e-6, maxiter=500, K=0, simul=false)
 
-    Random.seed!(25)
     w, t, m, ϵvv, ξvv = calib_targets(dd, smalltable=smalltable, showtable=showtable, uncond_K=10_000)
 
 
