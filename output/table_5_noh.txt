@@ -1,0 +1,35 @@
+table 5: no recovery
+
+robustness, noncontingent
+                & Data      & Benchmark \\ \midrule
+Spread          & 815       & 832       \\
+o/w Spread RE   & NaN       & 425       \\
+Spread MTI      & NaN       & 937       \\
+Std Spread      & 443       & 375       \\
+Debt            & 17.4      & 16.8      \\
+Std(c)/Std(y)   & 0.87      & 1.33      \\
+Corr(y,c)       & 0.97      & 0.97      \\
+Corr(y,tb/y)    & -0.77     & -0.618    \\
+Corr(y,spread)  & -0.72     & -0.741    \\
+Default Prob    & 3         & 3.17      \\
+Welfare Gains   &  -        &   -       \\
+DEP computed on 8.75 years (35 periods): 40.1%
+DEP computed on 60.0 years (240 periods): 27.1%
+
+robustness, linear
+                & Data      & Benchmark \\ \midrule
+Spread          & 815       & 740       \\
+o/w Spread RE   & NaN       & 339       \\
+Spread MTI      & NaN       & 1.02e+03  \\
+Std Spread      & 443       & 283       \\
+Debt            & 17.4      & 17.6      \\
+Std(c)/Std(y)   & 0.87      & 1.29      \\
+Corr(y,c)       & 0.97      & 0.97      \\
+Corr(y,tb/y)    & -0.77     & -0.559    \\
+Corr(y,spread)  & -0.72     & -0.765    \\
+Default Prob    & 3         & 2.76      \\
+Welfare Gains   &  -        &  0.15\%   \\
+
+
+
+
