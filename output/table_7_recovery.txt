@@ -1,0 +1,30 @@
+table 7: recovery 60%
+
+robustness, noncontingent
+                & Data      & Benchmark \\ \midrule
+Spread          & 815       & 788       \\
+o/w Spread RE   & NaN       & 510       \\
+Spread MTI      & NaN       & 550       \\
+Std Spread      & 443       & 836       \\
+Debt            & 17.4      & 18.9      \\
+Std(c)/Std(y)   & 0.87      & 1.26      \\
+Corr(y,c)       & 0.97      & 0.964     \\
+Corr(y,tb/y)    & -0.77     & -0.542    \\
+Corr(y,spread)  & -0.72     & -0.75     \\
+Default Prob    & 3         & 5.85      \\
+DEP computed on 8.75 years (35 periods): 41.8%
+DEP computed on 60.0 years (240 periods): 29.4%
+
+robustness, linear
+\toprule                 & Data      & Benchmark \\ \midrule
+Spread          & 815       & 626       \\
+o/w Spread RE   & NaN       & 328       \\
+Spread MTI      & NaN       & 619       \\
+Std Spread      & 443       & 467       \\
+Debt            & 17.4      & 19.4      \\
+Std(c)/Std(y)   & 0.87      & 1.29      \\
+Corr(y,c)       & 0.97      & 0.975     \\
+Corr(y,tb/y)    & -0.77     & -0.67     \\
+Corr(y,spread)  & -0.72     & -0.813    \\
+Default Prob    & 3         & 4.72      \\
+
