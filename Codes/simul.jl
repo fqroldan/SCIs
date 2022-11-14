@@ -88,7 +88,7 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     return v, def_p, ct, bp, yp, new_def, q, spread, spread_RE, spread_MTI
 end
 
-function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true, b0 = 0.0, y0 = mean(dd.gr[:y]))
+function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true, B0 = 0.0, Y0 = mean(dd.gr[:y]))
 
     cd_sep = cond_defs + separation
 
@@ -111,8 +111,8 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
     itp_c = interpolate(knots, dd.gc, Gridded(Linear()))
 
     Threads.@threads for jp in eachindex(pv)
-        b0 = b0
-        y0 = y0
+        b0 = B0
+        y0 = Y0
         def = false
         new_def = false
 
@@ -379,8 +379,8 @@ end
 # end
 
 function simulshocks(T, K)
-    ϵvv = [rand(Normal(0,1), T) for _ in 1:K]
-    ξvv = [rand(T) for _ in 1:K]
+    ϵvv = [rand(MersenneTwister(25), Normal(0,1), T) for _ in 1:K]
+    ξvv = [rand(MersenneTwister(25), T) for _ in 1:K]
 
     return ϵvv, ξvv
 end
