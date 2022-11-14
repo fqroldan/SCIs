@@ -1,5 +1,9 @@
-function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=false)
+function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=true)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+
+    if isapprox(dd.pars[:θ], 0)
+        DEP = false
+    end
 
     mpe_simul!(dd, tol = 5e-6, maxiter=500, K=0, simul=false)
 
@@ -32,7 +36,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     end
 
     dd.pars[:τ] = 1
-    dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
+    # dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
 
     mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=smalltable, showtable=showtable)
