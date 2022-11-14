@@ -13,7 +13,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     print("V with noncont: $v_noncont, c = $c_noncont\n")
 
     if DEP
-        DEP_bylength(dd)
+        DEP_bylength(dd, [35/4, 60])
     end
 
     dd.pars[:α] = 1
@@ -29,7 +29,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     print("Gains with linear = $(@sprintf("%0.3g", 100*gains_linear))%\n")
 
     if DEP
-        DEP_bylength(dd)
+        DEP_bylength(dd, [35/4, 60])
     end
 
     dd.pars[:τ] = 1
@@ -44,7 +44,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     gains_threshold = c_threshold / c_noncont - 1
     print("Gains with threshold = $(@sprintf("%0.3g", 100*gains_threshold))%\n")
     if DEP
-        DEP_bylength(dd)
+        DEP_bylength(dd, [35/4, 60])
     end
 
     return v_noncont, v_linear, v_threshold
@@ -68,9 +68,8 @@ end
 function DEP_bylength(dd::DebtMod, Yvec = range(10, 60, length=6))
 
     for years in Yvec
-        year = Int(years)
-        _, DEP = simul_dist(dd, K = 2_000, burn_in = 2_000, T = 4year)
-        print("DEP computed on $year years ($(4year) periods): $(@sprintf("%0.3g", 100*DEP))%\n")
+        _, DEP = simul_dist(dd, K = 2_000, burn_in = 2_000, T = Int(4years))
+        print("DEP computed on $years years ($(Int(4years)) periods): $(@sprintf("%0.3g", 100*DEP))%\n")
     end
 end
 
