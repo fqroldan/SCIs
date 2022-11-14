@@ -50,7 +50,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     return v_noncont, v_linear, v_threshold
 end
 
-function comp_t5(dd::DebtMod, showtable=false)
+function comp_t5(dd::DebtMod; showtable=false)
     @assert dd.pars[:θ] >= 1e-3
 
     print("Solving original model with θ = $(dd.pars[:θ])\n")
