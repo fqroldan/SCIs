@@ -52,35 +52,36 @@ DEP computed on 8.75 years (35 periods): 32.8%
 DEP computed on 60.0 years (240 periods): 14.4%
 
 
-Table robustness
-                & Noncontingent  &  Threshold & $\alpha = 1$ \\ \midrule
-Spread          & 832            &   1650     & 740          \\
-o/w Spread RE   & 425            &   18.7     & 339       \\
-Spread MTI      & 937            &   1650     & 1020      \\
-Std Spread      & 375            &   269      & 283       \\
-Debt            & 16.8           &   18.7     & 17.6      \\
-Std(c)/Std(y)   & 1.33           &   0.861    & 1.29      \\
-Corr(y,c)       & 0.97           &   0.899    & 0.97      \\
-Corr(y,tb/y)    & -0.618         &   0.469    & -0.559    \\
-Corr(y,spread)  & -0.741         &   -0.634   & -0.765    \\
-Default Prob    & 3.17\%         &   0.12\%   & 2.76\%    \\
-Welfare Gains   &   -            &   -1.16\%  &  0.15\%   \\
-DEP             &  40.1\%        &   32.8\%   &  39.8\%   \\
+Full table
+
+                & Noncontingent & Threshold  & $\alpha = 1$  \\ \midrule
+Spread          & 892           & 373        & 752       \\
+o/w Spread RE   & 892           & 373        & 752       \\
+Spread MTI      & 367           & 374        & 343       \\
+Std Spread      & 453           & 156        & 337       \\
+Debt            & 18.4          & 33.5       & 19.1      \\
+Std(c)/Std(y)   & 1.35          & 0.871      & 1.32      \\
+Corr(y,c)       & 0.973         & 0.477      & 0.968     \\
+Corr(y,tb/y)    & -0.673        & 0.565      & -0.603    \\
+Corr(y,spread)  & -0.722        & -0.278     & -0.743    \\
+Default Prob    & 6             & 2.09       & 5.59      \\
+Welfare Gains   &   -           &  0.82\%    &  0.22\%   \\
+DEP             &   -           &   -        &    -      \\
 
 
-& Noncontingent & Threshold  & $\alpha = 1$  \\ \midrule
-& 892           & 373        & 752       \\
-& 892           & 373        & 752       \\
-& 367           & 374        & 343       \\
-& 453           & 156        & 337       \\
-& 18.4          & 33.5       & 19.1      \\
-& 1.35          & 0.871      & 1.32      \\
-& 0.973         & 0.477      & 0.968     \\
-& -0.673        & 0.565      & -0.603    \\
-& -0.722        & -0.278     & -0.743    \\
-& 6             & 2.09       & 5.59      \\
-&   -           &  0.82\%    &  0.22\%   \\
-
+& Noncontingent  &  Threshold & $\alpha = 1$ \\ \midrule
+& 832            &   1650     & 740          \\
+& 425            &   18.7     & 339       \\
+& 937            &   1650     & 1020      \\
+& 375            &   269      & 283       \\
+& 16.8           &   18.7     & 17.6      \\
+& 1.33           &   0.861    & 1.29      \\
+& 0.97           &   0.899    & 0.97      \\
+& -0.618         &   0.469    & -0.559    \\
+& -0.741         &   -0.634   & -0.765    \\
+& 3.17\%         &   0.12\%   & 2.76\%    \\
+&   -            &   -1.16\%  &  0.15\%   \\
+&  40.1\%        &   32.8\%   &  39.8\%   \\
 
 
 rational expectations, noncontingent
