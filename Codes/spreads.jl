@@ -259,13 +259,13 @@ function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
     return q, qD
 end
 
-function itp_mti(dd::DebtMod; do_calc=true)
+function itp_mti(dd::DebtMod; α = 1, τ = 1, do_calc=true)
     
     spr_og = zeros(length(dd.gr[:b]), length(dd.gr[:y]), 1:2)
     
     if do_calc
         q, qD = q_SDF_og(dd)
-        itp_yield = get_yields_itp(dd::Default, α = 1, τ = 1)
+        itp_yield = get_yields_itp(dd::Default, α = α, τ = τ)
 
         for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
             # 1 = repayment
