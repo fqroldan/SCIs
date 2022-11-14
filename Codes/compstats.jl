@@ -1,7 +1,7 @@
 function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=false)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
-    mpe_simul!(dd, maxiter=500, K=0, simul=false)
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=0, simul=false)
 
     Random.seed!(25)
     w, t, m, ϵvv, ξvv = calib_targets(dd, smalltable=smalltable, showtable=showtable, uncond_K=10_000)
@@ -19,7 +19,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     dd.pars[:α] = 1
     dd.pars[:min_q] = 0
 
-    mpe_simul!(dd, maxiter=500, K=8, simul=false)
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=smalltable, showtable=showtable)
 
     v_linear = welfare(dd)
@@ -35,7 +35,7 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=f
     dd.pars[:τ] = 1
     dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
 
-    mpe_simul!(dd, maxiter=500, K=8, simul=false)
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=smalltable, showtable=showtable)
 
     v_threshold = welfare(dd)
