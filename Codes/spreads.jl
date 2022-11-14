@@ -236,7 +236,7 @@ function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = 
     return q, qD
 end
 
-function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
+function q_SDF_og(dd::DebtMod, do_calc=true; tol=1e-6, maxiter=500, verbose = false)
     iter = 0
     dist = 1+tol
 
@@ -264,21 +264,23 @@ function q_SDF_og(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
 end
 
 function itp_mti(dd::DebtMod; α = 1, τ = 1, do_calc=true)
-    
+
     spr_og = zeros(length(dd.gr[:b]), length(dd.gr[:y]), 1:2)
-    
-    if do_calc
-        q, qD = q_SDF_og(dd)
-        itp_yield = get_yields_itp(dd::Default, α = α, τ = τ)
-
-        for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
-            # 1 = repayment
-            # 2 = default
-
-            spr_og[jb, jy, 1] = itp_yield(q[jb, jy], yv)
-            spr_og[jb, jy, 2] = itp_yield(qD[jb, jy], yv)
-        end
+    if α == dd.pars[:α] && τ == dd.pars[:τ]
+        do_calc = false
     end
+       
+    q, qD = q_SDF_og(dd, do_calc)
+    itp_yield = get_yields_itp(dd::Default, α = α, τ = τ)
+
+    for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
+        # 1 = repayment
+        # 2 = default
+
+        spr_og[jb, jy, 1] = itp_yield(q[jb, jy], yv)
+        spr_og[jb, jy, 2] = itp_yield(qD[jb, jy], yv)
+    end
+
 
     knts = (dd.gr[:b], dd.gr[:y], 1:2)
     itp_spr_og = interpolate(knts, spr_og, Gridded(Linear()))
