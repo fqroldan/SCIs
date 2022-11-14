@@ -6,9 +6,9 @@ function simul_cons(dd::DebtMod, T=150, K=10_000)
     itp_qRE, itp_qdRE = q_RE(dd, do_calc = false);
     itp_spr_og = itp_mti(dd, do_calc = false);
 
-    Ny = length(dd.gr[:y])
-    c_bar = Vector{Vector{Float64}}(undef, Ny)
-    u_bar = Vector{Vector{Float64}}(undef, Ny)
+    Ny = length(dd.gr[:y]);
+    u_bar = Vector{Vector{Float64}}(undef, Ny);
+    c_bar = Vector{Vector{Float64}}(undef, Ny);
 
     for (jy, yv) in enumerate(dd.gr[:y])
         pv, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv, burn_in = 0, stopdef = false, B0 = 0., Y0 = yv)
@@ -35,17 +35,25 @@ function NPDV(dd::DebtMod, yvec)
     return v
 end
 
+function NPDVu(dd::DebtMod, cvec)
+    uvec = [u(c, dd) for c in cvec]
+    return NPDV(dd, uvec)
+end
+
 function welfare_decomp(dd::DebtMod; T = 150, K = 10_000)
 
     u_bar, c_bar = simul_cons(dd, T, K)
-    u_cbar = [u(c, dd) for c in c_bar]
 
     w = dd.v[:V][1, :]
 
-    w_nocost = [NPDV(dd, u_cbar[jy]) for jy in eachindex(dd.gr[:y])]
-    w_u_bar  = [NPDV(dd, u_bar[jy])  for jy in eachindex(dd.gr[:y])]
+    w_c_bar = [NPDVu(dd, c_bar[jy]) for jy in eachindex(dd.gr[:y])]
+    w_u_bar = [NPDV(dd, u_bar[jy])  for jy in eachindex(dd.gr[:y])]
 
-    return w, w_nocost, w_u_bar
+    c = [cons_equiv(v, dd) for v in w]
+    c_cbar = [cons_equiv(v,dd) for v in w_c_bar]
+    c_ubar = [cons_equiv(v,dd) for v in w_u_bar]
+
+    return c, c_ubar, c_cbar
 end
 
 
