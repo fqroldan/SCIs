@@ -132,7 +132,6 @@ function save_all_SCIs(dd::DebtMod)
 end
 
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
-## _v4 has very good everything (19% DEP with threshold) but a bit high def prob in baseline.
 
 function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
 
