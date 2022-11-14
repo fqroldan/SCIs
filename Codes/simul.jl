@@ -439,9 +439,8 @@ function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_00
     objective, targets_vec, moments_vec
 end
 
-function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, kwargs...)
+function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=10_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, kwargs...)
 
-    Random.seed!(25)
     ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
     ϵvv, ξvv = simulshocks(cond_T, cond_K);
 
