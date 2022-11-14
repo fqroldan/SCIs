@@ -382,8 +382,9 @@ end
 # end
 
 function simulshocks(T, K)
-    ϵvv = [rand(MersenneTwister(25), Normal(0,1), T) for _ in 1:K]
-    ξvv = [rand(MersenneTwister(25), T) for _ in 1:K]
+    Random.seed!(25)
+    ϵvv = [rand(Normal(0,1), T) for _ in 1:K]
+    ξvv = [rand(T) for _ in 1:K]
 
     return ϵvv, ξvv
 end
