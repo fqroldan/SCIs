@@ -53,7 +53,7 @@ DEP computed on 60.0 years (240 periods): 19.8%
 rational expectations, noncontingent
                 & Data      & Benchmark \\ \midrule
 Spread          & 815       & 744       \\
-o/w Spread RE   & NaN       & 739       \\
+o/w Spread RE   & NaN       & 744       \\
 Spread MTI      & NaN       & 225       \\
 Std Spread      & 443       & 780       \\
 Debt            & 17.4      & 21.6      \\
@@ -66,28 +66,28 @@ Welfare Gains   &  -        &   -       \\
 
 rational expectations, linear
                 & Data      & Benchmark \\ \midrule
-Spread          & 815       & 674       \\
-o/w Spread RE   & NaN       & 699       \\
-Spread MTI      & NaN       & 240       \\
-Std Spread      & 443       & 680       \\
+Spread          & 815       & 678       \\
+o/w Spread RE   & NaN       & 678       \\
+Spread MTI      & NaN       & 237       \\
+Std Spread      & 443       & 683       \\
 Debt            & 17.4      & 22.6      \\
-Std(c)/Std(y)   & 0.87      & 1.18      \\
-Corr(y,c)       & 0.97      & 0.969     \\
-Corr(y,tb/y)    & -0.77     & -0.397    \\
-Corr(y,spread)  & -0.72     & -0.669    \\
-Default Prob    & 3         & 11.8      \\
+Std(c)/Std(y)   & 0.87      & 1.16      \\
+Corr(y,c)       & 0.97      & 0.971     \\
+Corr(y,tb/y)    & -0.77     & -0.355    \\
+Corr(y,spread)  & -0.72     & -0.672    \\
+Default Prob    & 3         & 12.1      \\
 Welfare Gains   &  -        & 0.18\%    \\
 
 rational expectations, threshold
                 & Data      & Benchmark \\ \midrule
 Spread          & 815       & 17.8      \\
-o/w Spread RE   & NaN       & 18        \\
-Spread MTI      & NaN       & 18        \\
+o/w Spread RE   & NaN       & 17.8      \\
+Spread MTI      & NaN       & 17.9      \\
 Std Spread      & 443       & 6.12      \\
 Debt            & 17.4      & 34.9      \\
 Std(c)/Std(y)   & 0.87      & 0.998     \\
 Corr(y,c)       & 0.97      & 0.865     \\
 Corr(y,tb/y)    & -0.77     & 0.324     \\
-Corr(y,spread)  & -0.72     & -0.404    \\
+Corr(y,spread)  & -0.72     & -0.403    \\
 Default Prob    & 3         & 0.84      \\
 Welfare Gains   &  -        & 1.3\%     \\
