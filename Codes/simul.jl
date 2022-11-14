@@ -36,20 +36,23 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     ρy, σy, ψ, ℏ, r = (pars[sym] for sym in (:ρy, :σy, :ψ, :ℏ, :r))
 
     if def
-        v = itp_D(b0, y0)
         ct = itp_c(b0, y0, 2)
         bp = b0
         q = itp_qD(bp, y0)
         qRE = itp_qdRE(bp, y0)
         yield_MTI = itp_spr_og(bp, y0, 2)
     else
-        v = itp_R(b0, y0)
         ct = itp_c(b0, y0, 1)
         bp = itp_b(b0, y0)
         q = itp_q(bp, y0)
         qRE = itp_qRE(bp, y0)
-        yield_MTI = itp_spr_og(bp, y0, 1)
+        yield_MTI = itp_spr_og(bp, y0, 1)        
     end
+
+    vD = itp_D(b0, y0)
+    vR = itp_R(b0, y0)
+    
+    net_vR = vR - vD
 
     # # Ensure that the decomposition is consistent with price (interpolations might be different)
     # q_adj = q / (qRE + qθcont + qθdef)
@@ -85,7 +88,7 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
         bp = (1 - ℏ) * bp
     end
 
-    return v, def_p, ct, bp, yp, new_def, q, spread, spread_RE, spread_MTI
+    return net_vR, def_p, ct, bp, yp, new_def, q, spread, spread_RE, spread_MTI
 end
 
 function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true, b0 = 0.0, y0 = mean(dd.gr[:y]))
@@ -122,7 +125,7 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
         ξvec = ξvv[jp]
 
         Tmax = length(ϵvec)
-        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :v_cond, :def, :q, :spread, :sp_RE, :sp_MTI, :sp, :acc])
+        pp = SimulPath(Tmax, [:c, :b, :y, :v, :ζ, :fund_def, :def, :q, :spread, :sp_RE, :sp_MTI, :sp, :acc])
 
         contflag = true
 
@@ -145,9 +148,9 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
 
             pp[:v, t] = itp_v(b0, y0)
 
-            v, def, ct, b0, y0, new_def, q, spread, spread_RE, spread_MTI = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y, itp_qRE, itp_qdRE, itp_spr_og)
+            net_vR, def, ct, b0, y0, new_def, q, spread, spread_RE, spread_MTI = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y, itp_qRE, itp_qdRE, itp_spr_og)
 
-            pp[:v_cond, t] = v
+            pp[:fund_def, t] = ifelse(new_def && net_vR > 0, 1.0, 0.0)
 
             pp[:q, t] = q
             pp[:spread, t] = (1+spread)^4 - 1 ## annualized
