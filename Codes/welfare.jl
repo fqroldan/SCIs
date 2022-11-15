@@ -66,6 +66,7 @@ end
 
 function welfare_decomp_opt(dd::DebtMod; α = 2.5, τ = 0.879)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+    modelname = ifelse(dd.pars[:θ] > 1e-3, "Robustness", "R.E.")
 
     c, c_ubar, c_cbar = welfare_decomp_at_y(dd)
 
@@ -76,7 +77,35 @@ function welfare_decomp_opt(dd::DebtMod; α = 2.5, τ = 0.879)
 
     co, co_ubar, co_cbar = welfare_decomp_at_y(dd)
 
-    return c, c_ubar, c_cbar, co, co_ubar, co_cbar
+    names = [
+        "Total gains",
+        "From default costs",
+        "From volatility",
+        "From level"
+        ]
+
+    qs = [
+        co / c,        
+        (co / co_ubar) / (c / c_ubar),
+        (co_ubar / co_cbar) / (c_ubar / c_cbar),
+        co_cbar / c_cbar 
+    ]
+
+    rp = maximum(length(name) for name in names) + 2
+
+
+    print("\n")
+    print(rpad(" ", rp, " "))
+    for jn in eachindex(names)
+        print("& " * rpad(names[jn], rp, " "))
+    end
+    print("\\\\\n")
+    print(rpad(modelname, rp, " "))
+    for jn in eachindex(names)
+        Q = @sprintf("%0.3g", 100*(qs[jn]-1))
+        print("& " * rpad(Q, rp, " "))
+    end
+    print("\\\\\n")
 end
 
 ### Stuff below unused
