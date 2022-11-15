@@ -9,3 +9,18 @@ optimal w RE, no recovery (h=1)
 optimal w robustness and recovery (h=0.4)
 \alpha = 2.5
 \tau = 0.879
+
+                & RE        & Robustness
+                & $\alpha = 5.5, \tau = 0.904$ & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          & 294       & 586       \\
+o/w Spread RE   & 294       & 201       \\
+Spread MTI      & 296       & 1.09e+03  \\
+Std Spread      & 69.6      & 120       \\
+Debt            & 23.3      & 19.9      \\
+Std(c)/Std(y)   & 0.842     & 1.14      \\
+Corr(y,c)       & 0.941     & 0.971     \\
+Corr(y,tb/y)    & 0.825     & -0.261    \\
+Corr(y,spread)  & -0.667    & -0.853    \\
+Default Prob    & 2.55      & 1.86      \\
+Welfare Gains   & 1.59\%    & 0.46\%    \\
+DEP             & -         & 38.2\%    \\
