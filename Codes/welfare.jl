@@ -56,6 +56,28 @@ function welfare_decomp(dd::DebtMod; T = 150, K = 10_000)
     return c, c_ubar, c_cbar
 end
 
+function welfare_decomp_at_y(dd::DebtMod; kwargs...)
+    c, c_ubar, c_cbar = welfare_decomp(dd; kwargs...)
+
+    jy = ceil(length(dd.gr[:y]) / 2)
+
+    return c[jy], c_ubar[jy], c_cbar[jy]
+end
+
+function welfare_decomp_opt(dd::DebtMod; α = 2.5, τ = 0.879)
+    @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+
+    c, c_ubar, c_cbar = welfare_decomp_at_y(dd)
+
+    dd.pars[:α] = α
+    dd.pars[:τ] = τ
+
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
+
+    co, co_ubar, co_cbar = welfare_decomp_at_y(dd)
+
+    return c, c_ubar, c_cbar, co, co_ubar, co_cbar
+end
 
 ### Stuff below unused
 
