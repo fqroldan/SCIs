@@ -1,7 +1,7 @@
                 & Data      & Benchmark & Rational Expectations\\ \midrule
 Spread          & 815       & 832       & 892       \\
-o/w Spread RE   & NaN       & 425       & 892       \\
-Spread MTI      & NaN       & 937       & 1177      \\
+o/w Spread RE   & -         & 425       & 892       \\
+Spread MTI      & NaN       & -253      & -116      \\
 Std Spread      & 443       & 375       & 438       \\
 Debt            & 17.4      & 16.8      & 17.3      \\
 Std(c)/Std(y)   & 0.87      & 1.33      & 1.36      \\
