@@ -1,0 +1,42 @@
+optimal w robustness, no recovery (h=1)
+\alpha = 2.5
+\tau = 0.879
+
+optimal w RE, no recovery (h=1)
+\alpha = 5.5
+\tau = 0.904
+
+optimal w robustness and recovery (h=0.4)
+\alpha = 2.5
+\tau = 0.879
+
+                & RE        & Robustness
+                & $\alpha = 5.5, \tau = 0.904$ & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          & 294       & 586       \\
+o/w Spread RE   & 294       & 201       \\
+Spread MTI      & 296       & 1.09e+03  \\
+Std Spread      & 69.6      & 120       \\
+Debt            & 23.3      & 19.9      \\
+Std(c)/Std(y)   & 0.842     & 1.14      \\
+Corr(y,c)       & 0.941     & 0.971     \\
+Corr(y,tb/y)    & 0.825     & -0.261    \\
+Corr(y,spread)  & -0.667    & -0.853    \\
+Default Prob    & 2.55      & 1.86      \\
+Welfare Gains   & 1.59\%    & 0.46\%    \\
+DEP             & -         & 38.2\%    \\
+
+
+                & RE        & Robustness
+                & Noncontingent & $\alpha = 5.5, \tau = 0.904$ & Noncontingent & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          & 892           & 294                          & 832           & 586       \\
+o/w Spread RE   & 892           & 294                          & 425           & 201       \\
+Spread MTI      & 367           & 296                          & 937           & 1.09e+03  \\
+Std Spread      & 453           & 69.6                         & 375           & 120       \\
+Debt            & 18.4          & 23.3                         & 16.8          & 19.9      \\
+Std(c)/Std(y)   & 1.35          & 0.842                        & 1.33          & 1.14      \\
+Corr(y,c)       & 0.973         & 0.941                        & 0.97          & 0.971     \\
+Corr(y,tb/y)    & -0.673        & 0.825                        & -0.618        & -0.261    \\
+Corr(y,spread)  & -0.722        & -0.667                       & -0.741        & -0.853    \\
+Default Prob    & 6             & 2.55                         & 3.17          & 1.86      \\
+Welfare Gains   & -             & 1.59\%                       &   -           & 0.46\%    \\
+DEP             & -             & -                            &  39.2\%       & 38.2\%    \\
