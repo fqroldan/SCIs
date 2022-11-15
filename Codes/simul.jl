@@ -439,7 +439,7 @@ function calib_targets(dd::DebtMod, ϵvv, ξvv; uncond_K=2_000, uncond_burn=2_00
     objective, targets_vec, moments_vec
 end
 
-function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=10_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, kwargs...)
+function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=10_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2000, longrun = false, kwargs...)
 
     ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K);
     ϵvv, ξvv = simulshocks(cond_T, cond_K);
@@ -461,7 +461,11 @@ function simul_table(dd::DebtMod, dd_RE::DebtMod; cond_K=1_000, uncond_K=10_000,
     pv_uncond_RE, _ = simulvec(dd_RE, itp_yield_RE, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
     pv_RE, _ = simulvec(dd_RE, itp_yield_RE, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
 
-    table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
+    if longrun
+        return table_moments(pv_uncond, pv_uncond, pv_uncond_RE, pv_uncond_RE; kwargs...)
+    else
+        table_moments(pv, pv_uncond, pv_RE, pv_uncond_RE; kwargs...)
+    end
 end
 
 
