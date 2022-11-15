@@ -59,7 +59,7 @@ end
 function welfare_decomp_at_y(dd::DebtMod; kwargs...)
     c, c_ubar, c_cbar = welfare_decomp(dd; kwargs...)
 
-    jy = ceil(length(dd.gr[:y]) / 2)
+    jy = ceil(Int, length(dd.gr[:y]) / 2)
 
     return c[jy], c_ubar[jy], c_cbar[jy]
 end
