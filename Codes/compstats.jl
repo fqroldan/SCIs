@@ -187,7 +187,26 @@ function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
     moments_L = compute_moments(pv_L)
     moments_O = compute_moments(pv_O)
 
-    return moments_T[:sp_MTI], moments_L[:sp_MTI], moments_O[:sp_MTI]
+    MTI = [moments_T[:sp_MTI], moments_L[:sp_MTI], moments_O[:sp_MTI]]
+
+    names = [
+        "Threshold bond",
+        "Linear bond",
+        "Optimal bond"
+    ]
+
+    rp = maximum(length(name) for name in names) + 2
+
+    for jn in eachindex(names)
+        print(rpad(names[jn], rp, " "))
+        sym = ifelse(jn == length(names), "\\\n", "&")
+        print(sym)
+    end
+    for jn in eachindex(names)
+        print(rpad(MTI[jn], rp, " "))
+        sym = ifelse(jn == length(names), "\\\n", "&")
+        print(sym)
+    end
 end
 
 function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
