@@ -1,0 +1,11 @@
+optimal w robustness, no recovery (h=1)
+\alpha = 2.5
+\tau = 0.879
+
+optimal w RE, no recovery (h=1)
+\alpha = 5.5
+\tau = 0.904
+
+optimal w robustness and recovery (h=0.4)
+\alpha = 2.5
+\tau = 0.879
