@@ -243,23 +243,25 @@ function q_SDF_og(dd::DebtMod, do_calc=true; tol=1e-6, maxiter=500, verbose = fa
     q  = copy(dd.q)
     qD = copy(dd.qD)
 
-    new_q  = similar(dd.q)
-    new_qD = similar(dd.qD)
+    if do_calc
+        new_q  = similar(dd.q)
+        new_qD = similar(dd.qD)
 
-    while dist > tol && iter < maxiter
-        iter += 1
+        while dist > tol && iter < maxiter
+            iter += 1
 
-        q_iter_local!(new_q, new_qD, q, qD, dd, dd.vL)
-        
-        dist_qR = norm(new_q - q) / max(1, norm(q))
-        dist_qD = norm(new_qD - qD)/max(1, norm(qD))
-        
-        dist = max(dist_qD, dist_qR)
+            q_iter_local!(new_q, new_qD, q, qD, dd, dd.vL)
+            
+            dist_qR = norm(new_q - q) / max(1, norm(q))
+            dist_qD = norm(new_qD - qD)/max(1, norm(qD))
+            
+            dist = max(dist_qD, dist_qR)
 
-        q  .= new_q
-        qD .= new_qD
+            q  .= new_q
+            qD .= new_qD
+        end
+        verbose && print("Done in $iter iterations")
     end
-    verbose && print("Done in $iter iterations")
     return q, qD
 end
 
@@ -267,6 +269,7 @@ function itp_mti(dd::DebtMod; α = 1, τ = 1, do_calc=true)
 
     spr_og = zeros(length(dd.gr[:b]), length(dd.gr[:y]), 1:2)
     if α == dd.pars[:α] && τ == dd.pars[:τ]
+        println("Marginal issuance bond coincides with original")
         do_calc = false
     end
        
