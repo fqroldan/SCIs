@@ -9,8 +9,6 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=t
 
     w, t, m, ϵvv, ξvv = calib_targets(dd, smalltable=smalltable, showtable=showtable, uncond_K=10_000)
 
-
-    Ny = length(dd.gr[:y])
     v_noncont = welfare(dd)
     c_noncont = cons_equiv(v_noncont, dd)
     print("V with noncont: $v_noncont, c = $c_noncont\n")
@@ -69,6 +67,36 @@ function comp_t5(dd::DebtMod; showtable=false)
     rat_n, rat_l, rat_t = comp_argbond(dd, showtable=showtable)
 
     return rob_n, rob_l, rob_t, rat_n, rat_l, rat_t
+end
+
+function comp_optbond(dd::DebtMod; α, τ)
+    @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
+
+    DEP = dd.pars[:θ] > 0
+
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=0, simul=false)
+
+    w, t, m, ϵvv, ξvv = calib_targets(dd, showtable=true, uncond_K=10_000)
+    
+    v_noncont = welfare(dd)
+    c_noncont = cons_equiv(v_noncont, dd)
+    print("V with noncont: $v_noncont, c = $c_noncont\n")
+
+    dd.pars[:α] = α
+    dd.pars[:τ] = τ
+
+    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
+    
+    calib_targets(dd, ϵvv, ξvv, showtable=true, uncond_K=10_000)
+
+    v_opt = welfare(dd)
+    c_opt = cons_equiv(v_opt, dd)
+    print("V with opt: $v_opt, c = $c_opt. ")
+    gains_opt = c_opt / c_noncont - 1
+    print("Gains with opt = $(@sprintf("%0.3g", 100*gains_opt))%\n")
+    if DEP
+        DEP_bylength(dd, [35/4, 60])
+    end
 end
 
 function DEP_bylength(dd::DebtMod, Yvec = range(10, 60, length=6))
