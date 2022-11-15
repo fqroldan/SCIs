@@ -170,43 +170,48 @@ welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
 function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
+    modelname = ifelse(dd.pars[:θ] > 1e-3, "Robustness", "R.E.")
+
     w, t, m, ϵvv, ξvv = calib_targets(dd, showtable=true, uncond_K=10_000)
 
     itp_yield = get_yields_itp(dd);
     itp_qRE, itp_qdRE = q_RE(dd, do_calc = false);
     
-    itp_og_thr = itp_mti(dd, α = 1, τ = 1);
     itp_og_lin = itp_mti(dd, α = 1, τ = 0);
+    itp_og_thr = itp_mti(dd, α = 1, τ = 1);
     itp_og_opt = itp_mti(dd, α = α, τ = τ);
 
-    pv_T, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_thr, ϵvv, ξvv)
     pv_L, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_lin, ϵvv, ξvv)
+    pv_T, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_thr, ϵvv, ξvv)
     pv_O, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_opt, ϵvv, ξvv)
 
-    moments_T = compute_moments(pv_T)
     moments_L = compute_moments(pv_L)
+    moments_T = compute_moments(pv_T)
     moments_O = compute_moments(pv_O)
 
-    MTI = [moments_T[:sp_MTI], moments_L[:sp_MTI], moments_O[:sp_MTI]]
+    MTI = [moments_T[:mean_spr], moments_L[:sp_MTI], moments_T[:sp_MTI], moments_O[:sp_MTI]]
 
     names = [
-        "Threshold bond",
+        "Noncontingent bond",
         "Linear bond",
+        "Threshold bond",
         "Optimal bond"
     ]
 
     rp = maximum(length(name) for name in names) + 2
 
+    print("\n")
+    print(rpad(" ", rp, " "))
     for jn in eachindex(names)
-        print(rpad(names[jn], rp, " "))
-        sym = ifelse(jn == length(names), "\\\n", "&")
-        print(sym)
+        print("& " * rpad(names[jn], rp, " "))
     end
+    print("\\\\\n")
+    print(rpad(modelname, rp, " "))
     for jn in eachindex(names)
-        print(rpad(MTI[jn], rp, " "))
-        sym = ifelse(jn == length(names), "\\\n", "&")
-        print(sym)
+        mti = @sprintf("%0.3g", MTI[jn])
+        print("& " * rpad(mti, rp, " "))
     end
+    print("\\\\\n")
 end
 
 function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
