@@ -167,7 +167,7 @@ end
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
 
 
-function MTI_all(dd::DebtMod; α_star = 2.5, τ_star = 0.89)
+function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
     w, t, m, ϵvv, ξvv = calib_targets(dd, showtable=true, uncond_K=10_000)
@@ -177,7 +177,7 @@ function MTI_all(dd::DebtMod; α_star = 2.5, τ_star = 0.89)
     
     itp_og_thr = itp_mti(dd, α = 1, τ = 1);
     itp_og_lin = itp_mti(dd, α = 1, τ = 0);
-    itp_og_opt = itp_mti(dd, α = α_star, τ = τ_star);
+    itp_og_opt = itp_mti(dd, α = α, τ = τ);
 
     pv_T, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_thr, ϵvv, ξvv)
     pv_L, _, _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_og_lin, ϵvv, ξvv)

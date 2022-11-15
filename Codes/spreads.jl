@@ -160,7 +160,7 @@ get_spread(q, κ::Number) = κ * (1/q - 1)
 get_spread(q, dd::DebtMod) = get_spread(q, dd.pars[:κ])
 
 
-function q_iter_local!(new_q, new_qd, old_q, old_qD, dd::Default, vL)
+function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
     """ Ecuación de Euler de los acreedores determinan el precio de la deuda dada la deuda, el ingreso, y el precio esperado de la deuda """
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
@@ -184,7 +184,7 @@ function q_iter_local!(new_q, new_qd, old_q, old_qD, dd::Default, vL)
                 sdf_D = 1.
             end
         
-            coupon = coupon_rate(ypv, dd, α = 1, τ = 1)
+            coupon = coupon_rate(ypv, dd, α = α, τ = τ)
         
             # Si el país tiene acceso a mercados, emite y puede hacer default mañana
             bpp = dd.gb[jbp, jyp]
@@ -205,38 +205,38 @@ function q_iter_local!(new_q, new_qd, old_q, old_qD, dd::Default, vL)
     end
 end
 
-function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
+# function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
 
-    iter = 0
-    dist = 1+tol
+#     iter = 0
+#     dist = 1+tol
 
-    q  = copy(dd.q)
-    qD = copy(dd.qD)
+#     q  = copy(dd.q)
+#     qD = copy(dd.qD)
 
-    new_q  = similar(dd.q)
-    new_qD = similar(dd.qD)
+#     new_q  = similar(dd.q)
+#     new_qD = similar(dd.qD)
 
-    vL = similar(dd.vL)
+#     vL = similar(dd.vL)
 
-    while dist > tol && iter < maxiter
-        iter += 1
+#     while dist > tol && iter < maxiter
+#         iter += 1
 
-        v_lender_iter!(dd, vL, q, 1, 1)
-        q_iter_local!(new_q, new_qD, q, qD, dd, vL)
+#         v_lender_iter!(dd, vL, q, 1, 1)
+#         q_iter_local!(new_q, new_qD, q, qD, dd, vL)
         
-        dist_qR = norm(new_q - q) / max(1, norm(q))
-        dist_qD = norm(new_qD - qD)/max(1, norm(qD))
+#         dist_qR = norm(new_q - q) / max(1, norm(q))
+#         dist_qD = norm(new_qD - qD)/max(1, norm(qD))
         
-        dist = max(dist_qD, dist_qR)
+#         dist = max(dist_qD, dist_qR)
 
-        q  .= new_q
-        qD .= new_qD
-    end
-    verbose && print("Done in $iter iterations")
-    return q, qD
-end
+#         q  .= new_q
+#         qD .= new_qD
+#     end
+#     verbose && print("Done in $iter iterations")
+#     return q, qD
+# end
 
-function q_SDF_og(dd::DebtMod, do_calc=true; tol=1e-6, maxiter=500, verbose = false)
+function q_SDF_og(dd::DebtMod, α, τ, do_calc=true; tol=1e-6, maxiter=500, verbose = false)
     iter = 0
     dist = 1+tol
 
@@ -250,7 +250,7 @@ function q_SDF_og(dd::DebtMod, do_calc=true; tol=1e-6, maxiter=500, verbose = fa
         while dist > tol && iter < maxiter
             iter += 1
 
-            q_iter_local!(new_q, new_qD, q, qD, dd, dd.vL)
+            q_iter_local!(new_q, new_qD, α, τ, q, qD, dd, dd.vL)
             
             dist_qR = norm(new_q - q) / max(1, norm(q))
             dist_qD = norm(new_qD - qD)/max(1, norm(qD))
@@ -273,7 +273,7 @@ function itp_mti(dd::DebtMod; α = 1, τ = 1, do_calc=true)
         do_calc = false
     end
        
-    q, qD = q_SDF_og(dd, do_calc)
+    q, qD = q_SDF_og(dd, α, τ, do_calc)
     itp_yield = get_yields_itp(dd::Default, α = α, τ = τ)
 
     for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
