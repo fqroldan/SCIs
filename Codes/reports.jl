@@ -7,6 +7,7 @@ function param_table(dd::DebtMod)
         "Interest rate",
         "Income autocorrelation coefficient",
         "Standard deviation of \$y_{t}\$",
+        "Preference shock scale parameter"
         "Reentry probability",
         "Duration of debt",
         "Discount factor",
@@ -22,6 +23,7 @@ function param_table(dd::DebtMod)
         "\$r\$",
         "\$\\rho\$",
         "\$\\sigma_{\\epsilon}\$",
+        "\$\\chi\$",
         "\$\\psi\$",
         "\$\\delta\$",
         "\$\\beta\$",
@@ -37,6 +39,7 @@ function param_table(dd::DebtMod)
         dd.pars[:r],
         dd.pars[:ρy],
         dd.pars[:σy],
+        dd.pars[:χ],
         dd.pars[:ψ],
         dd.pars[:ρ],
         dd.pars[:β],
