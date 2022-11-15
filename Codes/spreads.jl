@@ -175,7 +175,7 @@ function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
         sum_sdf_D = 0.0
         for (jyp, ypv) in enumerate(dd.gr[:y])
             prob_def = dd.v[:prob][jbp, jyp]
-        
+
             if θ > 1e-3
                 sdf_R = exp(-θ * vL[jbp, jyp, 1])
                 sdf_D = exp(-θ * vL[jbp, jyp, 2])
@@ -183,20 +183,20 @@ function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
                 sdf_R = 1.
                 sdf_D = 1.
             end
-        
+
             coupon = coupon_rate(ypv, dd, α = α, τ = τ)
-        
+
             # Si el país tiene acceso a mercados, emite y puede hacer default mañana
             bpp = dd.gb[jbp, jyp]
             rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
-        
+
             # Si el país está en default, mañana puede recuperar acceso a mercados
             rep_D = ψ * rep_R + (1 - ψ) * sdf_D * old_qD[jbp, jyp]
-        
+
             prob = dd.P[:y][jy, jyp]
             Eq += prob * rep_R
             EqD += prob * rep_D
-        
+
             sum_sdf_R += prob * (prob_def * sdf_D + (1 - prob_def) * sdf_R)
             sum_sdf_D += prob * ((1-ψ) * sdf_D + ψ * sdf_R)
         end
@@ -254,7 +254,7 @@ function q_SDF_og(dd::DebtMod, α, τ, do_calc=true; tol=1e-6, maxiter=500, verb
             
             dist_qR = norm(new_q - q) / max(1, norm(q))
             dist_qD = norm(new_qD - qD)/max(1, norm(qD))
-            
+
             dist = max(dist_qD, dist_qR)
 
             q  .= new_q
@@ -274,7 +274,7 @@ function itp_mti(dd::DebtMod; α = 1, τ = 1, do_calc=true)
     end
        
     q, qD = q_SDF_og(dd, α, τ, do_calc)
-    itp_yield = get_yields_itp(dd::Default, α = α, τ = τ)
+    itp_yield = get_yields_itp(dd, α = α, τ = τ)
 
     for jb in eachindex(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
         # 1 = repayment
