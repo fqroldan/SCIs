@@ -36,7 +36,9 @@ function comp_argbond(dd::DebtMod; showtable=false, smalltable=!showtable, DEP=t
     end
 
     dd.pars[:τ] = 1
-    # dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
+    if dd.pars[:θ] == 0 && dd.pars[:ℏ] == 0.4
+        dd.gr[:b] = collect(range(0, 2 * maximum(dd.gr[:b]), length=length(dd.gr[:b])))
+    end
 
     mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
     calib_targets(dd, ϵvv, ξvv, uncond_K=10_000, smalltable=smalltable, showtable=showtable)
