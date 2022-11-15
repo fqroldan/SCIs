@@ -3,14 +3,15 @@ function param_table(dd::DebtMod)
     τ = ifelse(dd.pars[:τ] <= minimum(dd.gr[:y]), -Inf, dd.pars[:τ])
 
     rownames = [
+        "Sovereign's discount factor",
         "Sovereign's risk aversion",
+        "Preference shock scale parameter",
         "Interest rate",
+        "Duration of debt",
+        "Average coupon rate",
         "Income autocorrelation coefficient",
         "Standard deviation of \$y_{t}\$",
-        "Preference shock scale parameter",
         "Reentry probability",
-        "Duration of debt",
-        "Discount factor",
         "Default cost: linear",
         "Default cost: quadratic",
         "Degree of robustness",
@@ -19,14 +20,15 @@ function param_table(dd::DebtMod)
     ]
 
     param_names = [
+        "\$\\beta\$",
         "\$\\gamma\$",
+        "\$\\chi\$",
         "\$r\$",
+        "\$\\delta\$",
+        "\$\\bar{\\kappa}\$",
         "\$\\rho\$",
         "\$\\sigma_{\\epsilon}\$",
-        "\$\\chi\$",
         "\$\\psi\$",
-        "\$\\delta\$",
-        "\$\\beta\$",
         "\$d_0\$",
         "\$d_1\$",
         "\$\\theta\$",
@@ -35,14 +37,15 @@ function param_table(dd::DebtMod)
     ]
 
     params = [
+        dd.pars[:β],
         dd.pars[:γ],
+        dd.pars[:χ],
         dd.pars[:r],
+        dd.pars[:ρ],
+        dd.pars[:κ],
         dd.pars[:ρy],
         dd.pars[:σy],
-        dd.pars[:χ],
         dd.pars[:ψ],
-        dd.pars[:ρ],
-        dd.pars[:β],
         dd.pars[:d1],
         dd.pars[:d2],
         dd.pars[:θ],
