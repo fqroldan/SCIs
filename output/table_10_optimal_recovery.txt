@@ -24,20 +24,75 @@ DEP
 
 
                 & RE        & Robustness
-                & Noncontingent & $\alpha = 5.5, \tau = 0.904$ & Noncontingent & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
-Spread          
-o/w Spread RE   
-Spread MTI      
-Std Spread      
-Debt            
-Std(c)/Std(y)   
-Corr(y,c)       
-Corr(y,tb/y)    
-Corr(y,spread)  
-Default Prob    
-Welfare Gains   
-DEP             
+                & Noncontingent & $\alpha = 5, \tau = 0.93$ & Noncontingent & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          & 831           & 130                       & 756           & 365     \\
+o/w Spread RE   & 831           & 130                       & 452           & 101     \\
+Spread MTI      & 218           & 180                       & 586           & 711     \\
+Std Spread      & 741           & 190                       & 471           & 194     \\
+Debt            & 21.2          & 18.9                      & 18.7          & 21.1    \\
+Std(c)/Std(y)   & 1.18          & 1.03                      & 1.27          & 1.24    \\
+Corr(y,c)       & 0.948         & 0.85                      & 0.971         & 0.852   \\
+Corr(y,tb/y)    & -0.319        & 0.17                      & -0.583        & -0.151  \\
+Corr(y,spread)  & -0.707        & -0.587                    & -0.808        & -0.737  \\
+Default Prob    & 12.6          & 1.68                      & 5.77          & 1.62    \\
+Welfare Gains   &  -            & 0.91\%                    & -             & 0.64\%  \\
+DEP             &  -            &  -                        & 41.6\%        & 38.4\%  \\
 
 
 
+robustness
+                & Data      & Benchmark \\\midrule
+Spread          & 815       & 756       \\
+o/w Spread RE   & NaN       & 452       \\
+Spread MTI      & NaN       & 586       \\
+Std Spread      & 443       & 471       \\
+Debt            & 17.4      & 18.7      \\
+Std(c)/Std(y)   & 0.87      & 1.27      \\
+Corr(y,c)       & 0.97      & 0.971     \\
+Corr(y,tb/y)    & -0.77     & -0.583    \\
+Corr(y,spread)  & -0.72     & -0.808    \\
+Default Prob    & 3         & 5.77      \\
+Welfare Gains               & -         \\
+DEP                         & 41.6\%    \\
 
+Spread          & 815       & 365       \\
+o/w Spread RE   & NaN       & 101       \\
+Spread MTI      & NaN       & 711       \\
+Std Spread      & 443       & 194       \\
+Debt            & 17.4      & 21.1      \\
+Std(c)/Std(y)   & 0.87      & 1.24      \\
+Corr(y,c)       & 0.97      & 0.852     \\
+Corr(y,tb/y)    & -0.77     & -0.151    \\
+Corr(y,spread)  & -0.72     & -0.737    \\
+Default Prob    & 3         & 1.62      \\
+Welfare Gains               & 0.64\%    \\
+DEP                         & 38.4\%    \\
+
+
+RE
+
+Spread          & 815       & 831       \\
+o/w Spread RE   & NaN       & 831       \\
+Spread MTI      & NaN       & 218       \\
+Std Spread      & 443       & 741       \\
+Debt            & 17.4      & 21.2      \\
+Std(c)/Std(y)   & 0.87      & 1.18      \\
+Corr(y,c)       & 0.97      & 0.948     \\
+Corr(y,tb/y)    & -0.77     & -0.319    \\
+Corr(y,spread)  & -0.72     & -0.707    \\
+Default Prob    & 3         & 12.6      \\
+Welfare Gains   &           &  -        \\
+DEP             &           &  -        \\
+
+Spread          & 815       & 130       \\
+o/w Spread RE   & NaN       & 130       \\
+Spread MTI      & NaN       & 180       \\
+Std Spread      & 443       & 190       \\
+Debt            & 17.4      & 18.9      \\
+Std(c)/Std(y)   & 0.87      & 1.03      \\
+Corr(y,c)       & 0.97      & 0.85      \\
+Corr(y,tb/y)    & -0.77     & 0.17      \\
+Corr(y,spread)  & -0.72     & -0.587    \\
+Default Prob    & 3         & 1.68      \\
+Welfare Gains   &           & 0.91\%    \\
+DEP             &           &  -        \\
