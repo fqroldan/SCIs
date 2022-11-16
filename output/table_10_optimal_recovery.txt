@@ -1,0 +1,43 @@
+
+optimal w robustness and recovery (h=0.4)
+\alpha = 2.5
+\tau = 0.879
+
+optimal w RE and recovery (h=0.4)
+\alpha = 5
+\tau = 0.93
+
+                & RE        & Robustness
+                & $\alpha = 5.5, \tau = 0.904$ & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          
+o/w Spread RE   
+Spread MTI      
+Std Spread      
+Debt            
+Std(c)/Std(y)   
+Corr(y,c)       
+Corr(y,tb/y)    
+Corr(y,spread)  
+Default Prob    
+Welfare Gains   
+DEP             
+
+
+                & RE        & Robustness
+                & Noncontingent & $\alpha = 5.5, \tau = 0.904$ & Noncontingent & $\alpha = 2.5, \tau = 0.879$ \\ \midrule
+Spread          
+o/w Spread RE   
+Spread MTI      
+Std Spread      
+Debt            
+Std(c)/Std(y)   
+Corr(y,c)       
+Corr(y,tb/y)    
+Corr(y,spread)  
+Default Prob    
+Welfare Gains   
+DEP             
+
+
+
+
