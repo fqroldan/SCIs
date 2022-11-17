@@ -10,6 +10,9 @@ q_axis(dark) = attr(showgrid = true, gridcolor=gridcol(dark), gridwidth = 0.5, z
 bgcol(slides, dark) = ifelse(slides, ifelse(dark, darkbgd(), sand()), "white")
 qleg() = attr(orientation = "h", x=0.05, xanchor="left")
 
+qwidth(slides) = 864
+qheight(slides) = ceil(Int, qwidth(slides) * ifelse(slides, 10/16, 7/16))
+
 function qtemplate(;dark=false, slides=!dark)
     axis = q_axis(dark)
     width = 864 #1920 * 0.45
@@ -1239,25 +1242,25 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 			if jn == 1 && !reopt && slides
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, dark=dark, slides=slides, lw=lw, only_orig = true)
 
-				savefig(p1, "Images/distorted_only_orig$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+				savefig(p1, "output/distorted_only_orig$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, dark=dark, slides=slides, lw=lw, only_OG_wdef = true)
 
-				savefig(p1, "Images/distorted_only_OG_wdef$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+				savefig(p1, "output/distorted_only_OG_wdef$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, slides=slides, dark=dark, lw=lw, with_distort = true)
 
-				savefig(p1, "Images/distorted_only_with_distort$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+				savefig(p1, "output/distorted_only_with_distort$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 			end
 
 			p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, slides=slides, dark=dark, lw=lw)
 
 			reopt ? suf = "_reopt" : suf = ""
-			savefig(p1, "Images/distorted_$nv"*suf*"$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+			savefig(p1, "output/distorted_$nv"*suf*"$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 		end
 	end
 	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw)
-	savefig(p1, "Images/arrow$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+	savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 end
 
 function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
@@ -1265,10 +1268,10 @@ function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
 	dark ? jsli *= "_dark" : nothing
 
 	p1 = plot_parametric(Nz = Nz, slides=slides, dark = dark)
-	savefig(p1, "Images/spreads_parametric$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+	savefig(p1, "output/spreads_parametric$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 	p1 = plot_optimal(Nz = Nz_opt, slides=slides, dark = dark)
-	savefig(p1, "Images/spreads_optimal$(jsli).pdf", width=floor(Int, p1.plot.layout[:width]), height=floor(Int,p1.plot.layout[:height]))
+	savefig(p1, "output/spreads_optimal$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 	nothing
 end
