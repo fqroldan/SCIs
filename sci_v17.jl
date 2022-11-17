@@ -1228,7 +1228,9 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 	dark ? jsli *= "_dark" : nothing
 	lw = ifelse(slides, 2, 3)
 
-	namevec = ["noncontingent", "threshold", "linear", "1.25linear", "1.5linear", "optimal_RE", "robust", "linthres"]
+	namevec = ["noncontingent", "threshold", "linear", 
+	# "1.25linear", "1.5linear",
+	"optimal_RE", "robust", "linthres"]
 
 	rb, rf, γ, Δ, g = default_params(2)
 	for (jn, nv) in enumerate(namevec)

@@ -245,7 +245,7 @@ function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
 end
 
 
-function compare_bonds(dd::DebtMod; slides=slides, dark=!slides)
+function compare_bonds(dd::DebtMod; slides=true, dark=!slides)
     plot([
        scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.904) .* (1 .+ 5.5 * (dd.gr[:y] .- 1))), name = "R.E.")
        scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.879) .* (1 .+ 2.5 * (dd.gr[:y] .- 1))), name = "Bench")
