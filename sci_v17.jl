@@ -1259,7 +1259,7 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 			savefig(p1, "output/distorted_$nv"*suf*"$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 		end
 	end
-	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw)
+	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw+0.5)
 	savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 end
 
