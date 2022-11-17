@@ -214,6 +214,8 @@ function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
     print("\\\\\n")
 end
 
+
+
 function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
 
     fy = stationary_distribution(dd)
@@ -240,4 +242,12 @@ function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
             legend=attr(orientation="h", x=0.05, xanchor="left")
         )
     )
+end
+
+
+function compare_bonds(dd::DebtMod)
+    plot([
+       scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.904) .* (1 .+ 5.5 * (dd.gr[:y] .- 1))), name = "R.E.")
+       scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.879) .* (1 .+ 2.5 * (dd.gr[:y] .- 1))), name = "Bench")
+       bar(x=dd.gr[:y], y=2*stationary_distribution(dd)./maximum(stationary_distribution(dd)), name = "ergodic distribution", opacity = 0.25)], Layout(template = qtemplate(slides=true, dark=true), title = "Optimal bond design"))
 end
