@@ -245,9 +245,9 @@ function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
 end
 
 
-function compare_bonds(dd::DebtMod)
+function compare_bonds(dd::DebtMod; slides=slides, dark=!slides)
     plot([
        scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.904) .* (1 .+ 5.5 * (dd.gr[:y] .- 1))), name = "R.E.")
        scatter(x=dd.gr[:y], y = max.(0, (dd.gr[:y] .>= 0.879) .* (1 .+ 2.5 * (dd.gr[:y] .- 1))), name = "Bench")
-       bar(x=dd.gr[:y], y=2*stationary_distribution(dd)./maximum(stationary_distribution(dd)), name = "ergodic distribution", opacity = 0.25)], Layout(template = qtemplate(slides=true, dark=true), title = "Optimal bond design"))
+       bar(x=dd.gr[:y], y=2*stationary_distribution(dd)./maximum(stationary_distribution(dd)), name = "ergodic distribution", opacity = 0.25)], Layout(template = qtemplate(slides=slides, dark=dark), title = "Optimal bond design"))
 end
