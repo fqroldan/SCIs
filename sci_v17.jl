@@ -776,7 +776,7 @@ function plot_probs(; γ = 1, y1 = 0.75, βb = 1, β = βb, Δ = 0.1, Nθ = 5, N
     layout = Layout(template = template,
         title = "Distorted probabilities", #annotations = annots,
         # width = 1920*0.8, height=1080*0.8,
-        legend = attr(x = 1.05, xref = "paper", xanchor="right",
+        legend = attr(x = 1.08, xref = "paper", xanchor="right",
 			orientation="v"),
         # legend = attr(xanchor="center", x = 0.5, xref = "paper"),
         # font_family="Linux Libertine", font_size = 16,
