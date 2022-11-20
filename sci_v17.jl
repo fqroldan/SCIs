@@ -650,8 +650,10 @@ function plots_arrow(; γ=1, y1=0.75, βb=1, Nθ = 9, NΔ = 1, UCP = 1e-8, Nz = 
 		title = "<i>b R*</i>(<i>z;θ</i>)"
 	end
 	layout = Layout(template=template,
-        legend = attr(orientation="v", xref="paper",xanchor="right",x=1.05,
-            y=0, yanchor="top"),
+        legend = attr(x = 1.08, xref = "paper", xanchor="right",
+			orientation="v", y = 1, yanchor="bottom", yref = "paper"),
+        # legend = attr(orientation="v", xref="paper",xanchor="right",x=1.05,
+            # y=0, yanchor="top"),
         title=title,
 		xaxis=attr(title=xtitle),
 		yaxis=attr(title=ytitle)
@@ -777,7 +779,7 @@ function plot_probs(; γ = 1, y1 = 0.75, βb = 1, β = βb, Δ = 0.1, Nθ = 5, N
         title = "Distorted probabilities", #annotations = annots,
         # width = 1920*0.8, height=1080*0.8,
         legend = attr(x = 1.08, xref = "paper", xanchor="right",
-			orientation="v"),
+			orientation="v", y = 0.85, yanchor="bottom", yref = "paper"),
         # legend = attr(xanchor="center", x = 0.5, xref = "paper"),
         # font_family="Linux Libertine", font_size = 16,
         xaxis = attr(anchor = "y3", zeroline = false, title = "<i>y</i><sub>2</sub>(<i>z</i>)"),
@@ -1241,7 +1243,8 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 			Nz = 5001
 		end
 
-		for reopt in [true, false]
+		reopts = ifelse(slides, [false, true], [false])
+		for reopt in reopts
 			if jn == 1 && !reopt && slides
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, dark=dark, slides=slides, lw=lw, only_orig = true)
 
@@ -1263,7 +1266,7 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 		end
 	end
 	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw+0.5)
-	savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+		savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 end
 
 function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
@@ -1271,10 +1274,10 @@ function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
 	dark ? jsli *= "_dark" : nothing
 
 	p1 = plot_parametric(Nz = Nz, slides=slides, dark = dark)
-	savefig(p1, "output/spreads_parametric$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+	savefig(p1, "output/spreads_parametric$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
 
 	p1 = plot_optimal(Nz = Nz_opt, slides=slides, dark = dark)
-	savefig(p1, "output/spreads_optimal$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+	savefig(p1, "output/spreads_optimal$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
 
 	nothing
 end
