@@ -30,6 +30,49 @@ function qtemplate(;dark=false, slides=!dark)
     return Template(layout = l)
 end
 
+function write_tab2(rb, rf, γ, Δ, g)
+	params = [
+		"\$\\beta_b\$",
+		"\$\\beta\$",
+		"\$\\gamma\$",
+		"\$d_1\$",
+		"\$g\$",
+		"\$\\tau\$",
+		"\$\\sigma_z\$"
+	]
+	names = [
+		"Borrower's discount rate",
+		"Risk-free rate",
+		"Borrower's risk aversion",
+		"Output cost of default",
+		"Expected growth rate",
+		"Threshold for repayment",
+		"Std.~deviation of log output"
+	]
+	values = [
+		"$rb\\% ann.",
+		"$rf\\% ann.",
+		"$γ",
+		"$(100*Δ)\\%",
+		"$g\\% ann.",
+		"1",
+		"0.15"
+	]
+	parpad = 20
+	namepad = maximum(length(name) for name in names) + 2
+	valpad = 20
+
+	tab = ""
+
+	for jp in eachindex(params)
+		tab *= rpad(params[jp], parpad, " ") * "& "
+		tab *= rpad(names[jp], namepad, " ") * "& "
+		tab *= rpad(values[jp], valpad, " ") * "\\\\\n"
+	end
+	return tab
+end
+
+
 mutable struct SCI{K}
 	pars::Dict{Symbol, Float64}
 	gr::Dict{Symbol, Vector{Float64}}

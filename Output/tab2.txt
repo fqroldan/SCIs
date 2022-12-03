@@ -1,0 +1,7 @@
+$\beta_b$           & Borrower's discount rate      & 6\% ann.            \\
+$\beta$             & Risk-free rate                & 3\% ann.            \\
+$\gamma$            & Borrower's risk aversion      & 2                   \\
+$d_1$               & Output cost of default        & 20.0\%              \\
+$g$                 & Expected growth rate          & 8\% ann.            \\
+$\tau$              & Threshold for repayment       & 1                   \\
+$\sigma_z$          & Std.~deviation of log output  & 0.15                \\
