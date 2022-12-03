@@ -1266,7 +1266,7 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 		end
 	end
 	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw+0.5)
-		savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+	savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 end
 
 function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
