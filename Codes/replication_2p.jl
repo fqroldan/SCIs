@@ -1,7 +1,7 @@
 include("sci_2p_v17.jl")
 
-# Enter folder to save plots
-folder = "Codes/temp"
+# Enter folder to save plots (make sure the folder exists)
+folder = "Output/"
 
 Nθ = 9
 Nz = 5001
