@@ -1,69 +1,3 @@
-function distorted_density(dd::DebtMod)
-    Nb, Ny = (length(dd.gr[key]) for key in (:b, :y))
-    θ, ρy, σy, ψ = (dd.pars[key] for key in (:θ, :ρy, :σy, :ψ))
-
-    M = zeros(Nb, Ny, 2, Ny)
-    orig_dens = zeros(Nb, Ny, 2, Ny)
-
-    for (jy, yv) in enumerate(dd.gr[:y])
-        Ey = ρy * log(yv)
-        for (jbp, bpv) in enumerate(dd.gr[:b]), jζ in 1:2
-            
-            Em = 0.0
-            sum_prob = 0.0            
-            for (jyp, ypv) in enumerate(dd.gr[:y])
-                prob = pdf(Normal(Ey, σy), ypv)
-                sum_prob += prob
-                
-                if jζ == 1 # Repayment
-                    prob_def = dd.v[:prob][jbp, jyp]
-                else
-                    prob_def = 1 - ψ
-                end
-
-                kernel = prob_def * exp(-θ * dd.vL[jbp, jyp, 2]) + (1 - prob_def) * exp(-θ * dd.vL[jbp, jyp, 1])
-
-                orig_dens[jbp, jy, jζ, jyp] = prob
-
-                
-                M[jbp, jy, jζ, jyp] = kernel
-                Em += kernel * prob
-            end
-
-            M[jbp, jy, jζ, :] ./= Em
-        end
-    end
-    dist_dens = M .* orig_dens
-
-    return M, orig_dens, dist_dens
-end
-
-function dist_inv_cdf(dd::DebtMod, K=50)
-    Nb, Ny = (length(dd.gr[key]) for key in (:b, :y))
-
-    min_y, max_y = extrema(dd.gr[:y])
-    yvec = range(min_y, max_y, length=K)
-
-    M, orig_dens, dist_dens = distorted_density(dd)
-
-    int_dens = zeros(Nb, Ny, 2, K)
-    for jbp in eachindex(dd.gr[:b]), jy in eachindex(dd.gr[:y]), jζ in 1:2
-
-        itp_dist_dens = interpolate((dd.gr[:y],), dist_dens[jbp, jy, jζ, :], Gridded(Linear()))
-
-        f(y′) = itp_dist_dens(y′)
-
-        total_cdf = hquadrature(f, min_y, max_y)[1]
-
-        int_dens[jbp, jy, jζ, :] .= [hquadrature(f, min_y, y′)[1] for y′ in yvec] / total_cdf
-
-    end
-
-    int_itp = interpolate((dd.gr[:b], dd.gr[:y], 1:2, yvec), int_dens, Gridded(Linear()))
-end
-
-### HERE
-
 function distorted_transitions(dd::DebtMod)
     θ, ψ = (dd.pars[key] for key in (:θ, :ψ))
 
@@ -115,10 +49,6 @@ function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp
 
     probs = Weights([itp_P_true(bp, y0, jζ, yv) for yv in ygrid])
     yp = sample(rng, ygrid, probs)
-
-    # probs = cumsum(itp_P_true(bp, y0, jζ, yv) for yv in ygrid)
-    # jyp = findfirst(rand() .<= probs)
-    # yp = ygrid[jyp]
     
     loglik_true = log(itp_P_true(bp, y0, jζ, yp))
     loglik_alt  = log(itp_P_alt(bp, y0, jζ, yp))
@@ -129,7 +59,7 @@ function iter_simul_dist(b0, y0, def::Bool, itp_P_true, itp_P_alt, itp_prob, itp
         prob_def = itp_prob(bp, yp)
     end
 
-    ξ_def = ξt #rand()
+    ξ_def = ξt 
     def_p = (ξ_def <= prob_def)
 
     new_def = (!def && def_p)
@@ -176,8 +106,7 @@ function simul_eval(itp_P_true, itp_P_alt, itp_prob, itp_b, pars, ygrid, burn_in
     return pp, prob_wrong
 end
 
-# K = 2_000, burn_in = 2_000, T = 240
-function simul_dist(dd::DebtMod; K = 1_000, burn_in = 800, T = 240)
+function simul_dist(dd::DebtMod; K = 2_000, burn_in = 2_000, T = 35)
     ygrid = range(extrema(dd.gr[:y])..., length=21)
     pars = dd.pars
 

@@ -54,12 +54,6 @@ function iter_simul(b0, y0, def::Bool, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, 
     
     net_vR = vR - vD
 
-    # # Ensure that the decomposition is consistent with price (interpolations might be different)
-    # q_adj = q / (qRE + qθcont + qθdef)
-    # qRE     *= q_adj
-    # qθcont  *= q_adj
-    # qθdef   *= q_adj
-
     yield = itp_yield(q, y0)
 
     yield_RE = itp_yield(qRE, y0)
@@ -93,27 +87,32 @@ end
 
 function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv; burn_in=200, cond_defs = 35, separation = 4, stopdef = true, B0 = 0.0, Y0 = mean(dd.gr[:y]))
 
+    # Length of simulation
     cd_sep = cond_defs + separation
 
+    # Make sure shock vectors are consistent
     @assert length(ϵvv) == length(ξvv)
     K = length(ϵvv)
 
+    # Prep/preallocate vector of simulation paths
     pv = Vector{SimulPath}(undef, K)
     
-    knots = (dd.gr[:b], dd.gr[:y])
-    itp_R = interpolate(knots, dd.v[:R], Gridded(Linear()))
-    itp_D = interpolate(knots, dd.v[:D], Gridded(Linear()))
-    itp_v = interpolate(knots, dd.v[:V], Gridded(Linear()))
+    # Set up interpolators
+    knots    = (dd.gr[:b], dd.gr[:y])
+    itp_R    = interpolate(knots, dd.v[:R], Gridded(Linear()))
+    itp_D    = interpolate(knots, dd.v[:D], Gridded(Linear()))
+    itp_v    = interpolate(knots, dd.v[:V], Gridded(Linear()))
     itp_prob = interpolate(knots, dd.v[:prob], Gridded(Linear()))
-    itp_b = interpolate(knots, dd.gb, Gridded(Linear()))
+    itp_b    = interpolate(knots, dd.gb, Gridded(Linear()))
 
-    itp_q = interpolate(knots, dd.q, Gridded(Linear()))
-    itp_qD = interpolate(knots, dd.qD, Gridded(Linear()))
+    itp_q    = interpolate(knots, dd.q, Gridded(Linear()))
+    itp_qD   = interpolate(knots, dd.qD, Gridded(Linear()))
 
-    knots = (dd.gr[:b], dd.gr[:y], 1:2)
-    itp_c = interpolate(knots, dd.gc, Gridded(Linear()))
+    knots    = (dd.gr[:b], dd.gr[:y], 1:2)
+    itp_c    = interpolate(knots, dd.gc, Gridded(Linear()))
 
     Threads.@threads for jp in eachindex(pv)
+        # Starting point
         b0 = B0
         y0 = Y0
         def = false
@@ -121,6 +120,7 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
 
         min_y, max_y = extrema(dd.gr[:y])
 
+        # Vector of shocks for simulation jp is jp'th element of shock-vector vector
         ϵvec = ϵvv[jp]
         ξvec = ξvv[jp]
 
@@ -133,6 +133,7 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
         while contflag && t < Tmax
             t += 1
 
+            # Time-t state known from before
             ϵv = ϵvec[t]
             ξv = ξvec[t]
 
@@ -148,8 +149,10 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
 
             pp[:v, t] = itp_v(b0, y0)
 
+            # Compute endogenous variables at time t
             net_vR, def, ct, b0, y0, new_def, q, spread, spread_RE, spread_MTI = iter_simul(b0, y0, def, ϵv, ξv, itp_R, itp_D, itp_prob, itp_c, itp_b, itp_q, itp_qD, itp_yield, dd.pars, min_y, max_y, itp_qRE, itp_qdRE, itp_spr_og)
 
+            # Time-t stuff that is a function of the state
             pp[:fund_def, t] = ifelse(new_def && net_vR > 0, 1.0, 0.0)
 
             pp[:q, t] = q
@@ -160,13 +163,17 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
             pp[:sp, t] = (1+get_spread(q, dd))^4 - 1
             pp[:c, t] = ct
 
+            # Check stopping condition
             if stopdef && t >= burn_in + cd_sep && pp[:ζ, t] == 2 && maximum(pp[:ζ, jj] for jj in t-cd_sep+1:t-1) == 1
                 contflag = false
             end
         end
 
+        # Trim shock vector to final length of simulation
         ϵvv[jp] = ϵvv[jp][1:t]
         ξvv[jp] = ξvv[jp][1:t]
+        
+        # Trim burn-in period and/or unneeded history
         if stopdef
             pv[jp] = subpath(pp, t - cond_defs + 1, t)
         else
@@ -177,8 +184,6 @@ function simulvec(dd::DebtMod, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, �
 end
 
 compute_defprob(pv) = 100 * mean( 1-(1-sum(pp[:def])/sum(pp[:acc]))^4 for pp in pv )
-# compute_defprob(pv) = mean(sum(pp[:def]) / (sum(pp[:ζ].==1) / 4) * 100 for pp in pv_uncond)
-# compute_defprob(pv) = mean(sum(pp[:def]) / (horizon(pp) / 4) * 100 for pp in pv_uncond)
 
 function compute_moments(pv::Vector{SimulPath})
 
@@ -186,7 +191,6 @@ function compute_moments(pv::Vector{SimulPath})
 
     ## measure in basis points, already annualized
     moments[:mean_spr] = mean(mean(pp[:spread]) * 1e4 for pp in pv)
-    moments[:mean_sp]  = mean(mean(pp[:sp]) * 1e4 for pp in pv) # this only works if κ = r+ρ
 
     moments[:sp_RE] = mean(mean(pp[:sp_RE]) * 1e4 for pp in pv)
     moments[:sp_MTI] = mean(mean(pp[:sp_MTI]) * 1e4 for pp in pv)
@@ -221,61 +225,8 @@ targets_CE() = Dict{Symbol, Float64}(
     :corr_ysp => -0.72,
     :sp_RE => NaN,
     :sp_MTI => NaN,
+    :DEP => NaN,
 )
-
-targets_HMR() = Dict{Symbol, Float64}(
-    :mean_spr => 744,
-    :std_spr => 251,
-    :debt_gdp => 33,
-    :def_prob => 5.4,
-    :rel_vol => 0.87,
-    :corr_yc => 0.97,
-    :corr_ytb => -0.77,
-    :corr_ysp => -0.72,
-)
-
-targets_Mallucci() = Dict{Symbol, Float64}(
-    :mean_spr => 714,
-    :std_spr => 471,
-    :debt_gdp => 33,
-    :def_prob => 5.4,
-    :rel_vol => 0.87,
-    :corr_yc => 0.97,
-    :corr_ytb => -0.77,
-    :corr_ysp => -0.72,
-)
-
-targets_PP_OG() = Dict{Symbol, Float64}(
-    :mean_spr => 815,
-    :std_spr => 458,
-    :debt_gdp => 46/4,
-    :def_prob => 3.0,
-    :rel_vol => 0.87,
-    :corr_yc => 0.97,
-    :corr_ytb => -0.77,
-    :corr_ysp => -0.72,
-)
-
-function targets_PP()
-    targets = Dict{Symbol,Float64}(
-        :mean_spr => 815, # Pouzo-Presno
-        # :mean_spr => 744, # Hatchondo-Martinez-Roch
-        # :mean_spr => 714,   # Mallucci
-        :mean_sp  => 815,
-        :std_spr => 458,  # PP
-        # :std_spr => 251,  # HMR
-        # :std_spr => 471,    # Mallucci
-        # :debt_gdp => 25,
-        :debt_gdp => 33,
-        :rel_vol => 0.87,
-        :corr_yc => 0.97,
-        :corr_ytb => -0.77,
-        :corr_ysp => -0.72,
-        :def_prob => 5.4,
-        # :def_prob => 3,
-    )
-end
-
 
 function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
 
@@ -288,8 +239,6 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
 
     names = ["Spread", "Std Spread", "Debt-to-GDP", "Default Prob"]
     maxn = maximum(length(name) for name in names)
-
-    # freq_q = 100*mean(mean(p[:q] .<= min_q) for p in pv)
 
     table = "\n"
     table *= ("$(rpad("", maxn+3, " "))")
@@ -308,8 +257,6 @@ function table_during(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath})
         table *= ("\n")
     end
 
-    # table *= "Freq. at min_q = $(@sprintf("%0.3g", freq_q))%\n"
-
     print(table)
     nothing
 end
@@ -318,8 +265,8 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
 
     syms = [:mean_spr,
     # :mean_sp,
-    :sp_RE, :sp_MTI,
-    :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob]
+    # :sp_RE, :sp_MTI,
+    :std_spr, :debt_gdp, :def_prob, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp]
 
     targets = get_targets()
 
@@ -337,8 +284,8 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
 
     names = ["Spread",
     # "Spread OG",
-    "o/w Spread RE", "Spread MTI",
-    "Std Spread", "Debt", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)", "Default Prob"]
+    # "o/w Spread RE", "Spread MTI",
+    "Std Spread", "Debt-to-GDP", "Default Prob", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)"]
     maxn = maximum(length(name) for name in names)
 
     title = "\\toprule \n"
@@ -367,20 +314,6 @@ function table_moments(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, pv_R
     nothing
 end
 
-# function simul_table(dd::DebtMod, K = 1_000; kwargs...)
-#     Random.seed!(25)
-
-#     itp_yield = get_yields_itp(dd)
-
-#     ϵvv_unc, ξvv_unc = simulshocks(4_000, 2_000)
-#     ϵvv, ξvv = simulshocks(2_000, K)
-    
-#     pv_uncond = simulvec(dd, itp_yield, ϵvv_unc, ξvv_unc, burn_in=2_000, stopdef=false)
-#     pv = simulvec(dd, itp_yield, ϵvv, ξvv)
-
-#     table_moments(pv, pv_uncond; kwargs...)
-# end
-
 function simulshocks(T, K)
     Random.seed!(25)
     ϵvv = [rand(Normal(0,1), T) for _ in 1:K]
@@ -400,13 +333,12 @@ function eval_gmm(pv, pv_uncond, savetable, showtable, smalltable)
     moments_vec = [moments[key] for key in keys]
 
     W = diagm(ones(4))
-    W[2,2] = 0.75 # More weight on std dev of spread
 
     showtable && table_moments(pv, pv_uncond, savetable = savetable)
     !showtable && smalltable && table_during(pv, pv_uncond)
 
     objective = (moments_vec ./ targets_vec .- 1)' * W * (moments_vec ./ targets_vec .- 1)
-    objective, targets_vec, moments_vec#, dict
+    objective, targets_vec, moments_vec
 end
 
 
