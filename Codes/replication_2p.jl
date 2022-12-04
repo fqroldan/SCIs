@@ -11,7 +11,7 @@ rb, rf, γ, Δ, g = default_params(2)
 # Table 2: Parametrization
 tab2 = write_tab2(rb, rf, γ, Δ, g)
 
-write(folder * "tab2.txt", tab2)
+write(folder * "/tab2.txt", tab2)
 
 # Figure 2: distorted probabilities with noncontingent
 fig2 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench="noncontingent", Nθ = Nθ, Nz = Nz, reopt=false, slides=false, dark=false, lw=3)
