@@ -101,7 +101,7 @@ function calib_table(dd::DebtMod, dd_RE::DebtMod; uncond_K=2_000, uncond_burn=2_
     end
 end
 
-function add_to_table(moments, sym)
+function add_to_table(moments, sym, K = 10)
     value = moments[sym]
     if sym == :DEP
         if isnan(value)
@@ -112,7 +112,7 @@ function add_to_table(moments, sym)
     else
         val = @sprintf("%0.3g", value)
     end
-    return rpad(val, 10, " ")
+    return rpad(val, K, " ")
 end
 
 function table_moments_with_DEP(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPath}, DEP, pv_RE=[], pv_uncond_RE=[])
@@ -167,5 +167,68 @@ function table_moments_with_DEP(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPa
         end
     end
     table *= "\\bottomrule"
+    table
+end
+
+
+function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2_000, cond_K=1_000, rownames = false)
+    
+    ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
+    ϵvv, ξvv = simulshocks(cond_T, cond_K)
+
+    Z = length(dd_vec)
+
+    pv_vec = Vector{Vector{SimulPath}}(undef, Z)
+    pv_unc_vec = Vector{Vector{SimulPath}}(undef, Z)
+    DEP_vec = Vector{Float64}(undef, Z)
+    W_vec = Vector{Float64}(undef, Z)
+
+    for (jp, dd) in enumerate(dd_vec)
+        itp_yield = get_yields_itp(dd)
+        itp_qRE, itp_qdRE = q_RE(dd, do_calc=true)
+        itp_spr_og = itp_mti(dd, do_calc=true)
+
+        pv_unc_vec[jp], _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
+        
+        pv_vec[jp], _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
+
+        _, DEP_vec[jp] = simul_dist(dd)
+
+        W_vec[jp] = cons_equiv(welfare(dd), dd) / cons_equiv(welfare(dd_vec[1]), dd_vec[1]) - 1
+    end
+
+    table_moments_with_DEP(pv_unc_vec, pv_vec, DEP_vec, W_vec, namevec, rownames)
+end
+
+
+function table_moments_with_DEP(pv_unc_vec::Vector{Vector{SimulPath}}, pv_vec::Vector{Vector{SimulPath}}, DEP_vec, W_vec, namevec, rownames)
+
+    syms = [:mean_spr, :sp_RE, :sp_MTI, :std_spr, :debt_gdp, :def_prob, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :welfare, :DEP]
+    names = ["Spread (bps)", "o/w Spread RE", "Spread MTI", "Std Spread", "Debt-to-GDP (\\%)", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)", "Default Prob (\\%)", "Welfare Gains", "DEP"]
+    maxn = maximum(length(name) for name in names)
+
+    maxk = maximum(length(name) for name in namevec) + 2
+
+    
+    Z = length(pv_vec)
+    moments = Vector{Dict}(undef, Z)
+    for jp in eachindex(pv_vec)
+        moments[jp] = compute_moments(pv_vec[jp])
+        moments[jp][:def_prob] = compute_defprob(pv_unc_vec[jp])
+        moments[jp][:DEP] = 100 * DEP_vec[jp]
+        moments[jp][:welfare] = 100 * W_vec[jp]
+    end
+
+    table = ""
+    for (jn, nv) in enumerate(names)
+
+        if rownames
+            table *= "$(rpad(nv, maxn+2, " "))"
+        end
+        for jp in eachindex(pv_vec)
+            table *= "& $(add_to_table(moments[jp], syms[jn], maxk))"
+        end
+        table *= ("\\\\\n")
+    end
     table
 end
