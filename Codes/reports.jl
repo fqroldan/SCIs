@@ -112,9 +112,11 @@ function add_to_table(moments, sym, K = 10)
     elseif sym == :welfare && value == 0
         val = "-"
     elseif value > 999
-        val = @sprintf("%0.4g", value)
-    else
+        val = round(Int, value)
+    elseif abs(value) > 1
         val = @sprintf("%0.3g", value)
+    else
+        val = round(value, sigdigits = 2)
     end
     return rpad(val, K, " ")
 end

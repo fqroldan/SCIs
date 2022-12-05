@@ -5,7 +5,8 @@ input = "Output/"
 # As before ensure folder "folder" exists
 folder = "Output/"
 
-dd, dd_RE = load(input * "/dd.jld2", "dd", "dd_RE");
+dd = load(input * "/dd.jld2", "dd");
+dd_RE = load(input * "/dd_RE.jld2", "dd");
 
 # Table 3: Calibration
 tab3 = param_table(dd)
@@ -22,4 +23,4 @@ tab5a = comp_table(dd_vec, rownames = true)
 dd_vec = [load(input*"/dd.jld2", key) for key in ("dd", "dd_threshold", "dd_linear")];
 tab5b = comp_table(dd_vec)
 
-write(folder * "/tab5.txt", tab5a * "\n\n" * tab5b)
+write(folder * "/tab5.txt", tab5a * "\n" * tab5b)

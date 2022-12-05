@@ -4,8 +4,8 @@ Debt-to-GDP (\%)  & 17.4      & 16.7      & 17.1      \\
 Default Prob      & 3         & 3.16      & 5.97      \\\midrule 
  & \multicolumn{3}{c}{Other moments} \\\midrule 
 Std(c)/Std(y)     & 0.87      & 1.32      & 1.37      \\
-Corr(y,c)         & 0.97      & 0.969     & 0.941     \\
-Corr(y,tb/y)      & -0.77     & -0.604    & -0.589    \\
-Corr(y,spread)    & -0.72     & -0.739    & -0.685    \\
+Corr(y,c)         & 0.97      & 0.97      & 0.94      \\
+Corr(y,tb/y)      & -0.77     & -0.6      & -0.59     \\
+Corr(y,spread)    & -0.72     & -0.74     & -0.69     \\
 DEP               & -         & 40.1\%    & -         \\
 \bottomrule
