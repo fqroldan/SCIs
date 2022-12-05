@@ -117,6 +117,8 @@ function add_to_table(moments, sym, K = 10)
         end
     elseif sym == :welfare && value == 0
             val = "-"
+    elseif sym == :def_prob
+        val = @sprintf("%0.3g", round(value, digits = 2))
     elseif value > 999
         val = round(Int, value)
     elseif abs(value) > 50
