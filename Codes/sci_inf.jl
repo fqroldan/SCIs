@@ -36,7 +36,6 @@ function Default(;
     d2 = 0.296,
     ρy=0.9484,
     σy=0.02,
-    # σy = 0.026,
     Nb=150,
     Ny=91,
     bmax=1.25,
@@ -44,9 +43,6 @@ function Default(;
     κ = r+ρ,
     min_q = 0.35,
 )
-
-    # d1 = 1-Δ
-    # d2 = 0
 
     βL = 1/(1+r)
     wL = 1
@@ -107,7 +103,7 @@ u(cv, dd::DebtMod) = u(cv, dd.pars[:γ])
 function u(cv, γ)
     cmin = 1e-3
     if cv < cmin
-        # Por debajo de cmin, lineal con la derivada de u en cmin
+        # Below cmin, linear continuation using derivative
         return u(cmin, γ) + (cv - cmin) * cmin^(-γ)
     else
         if γ == 1
@@ -137,7 +133,7 @@ function budget_constraint(bpv, bv, yv, q, dd::DebtMod)
 
     coupon = coupon_rate(yv, dd)
     
-    # consumo es ingreso más ingresos por vender deuda nueva menos repago de deuda vieja
+    # consumption equals income plus proceeds from selling debt minus old debt repayments
     cv = yv + q * (bpv - (1 - ρ) * bv) - coupon * bv
     return cv
 end
@@ -145,10 +141,9 @@ end
 function BC(bpv, jb, jy, itp_q, dd::DebtMod)
     bv, yv = dd.gr[:b][jb], dd.gr[:y][jy]
 
-    # Interpola el precio de la deuda para el nivel elegido
+    # Interpolate debt price at chosen issuance level
     qv = itp_q(bpv, jy)
 
-    # Deduce consumo del estado, la elección de deuda nueva y el precio de la deuda nueva
     cv = budget_constraint(bpv, bv, yv, qv, dd)
 end
 
@@ -157,19 +152,10 @@ function eval_value(jb, jy, bpv, itp_q, itp_Ev, dd::DebtMod)
     β = dd.pars[:β]
     
     cv = BC(bpv, jb, jy, itp_q, dd)
-
-    # Evalúa la función de utilidad en c
     ut = u(cv, dd)
 
-    # # Calcula el valor esperado de la función de valor interpolando en b'
-    # Ev = 0.0
-    # for jyp in eachindex(dd.gr[:y])
-    #     prob = dd.P[:y][jy, jyp]
-    #     Ev += prob * itp_Ev(bpv, jyp)
-    # end
     Ev = itp_Ev(bpv)
 
-    # v es el flujo de hoy más el valor de continuación esperado descontado
     v = ut + β * Ev
 
     return v, cv
@@ -193,19 +179,19 @@ function opt_value(jb, jy, bmax, itp_q, itp_Ev, dd::DebtMod)
     # b' ∈ bgrid
     bmin = max_adj(jb, jy, bmax, itp_q, dd)
 
-    # Función objetivo en términos de b', dada vuelta 
+    # Objective function in terms of b', with minus to minimize
     obj_f(bpv) = -eval_value(jb, jy, bpv, itp_q, itp_Ev, dd)[1]
 
     if bmax - bmin < 1e-4
         b_star = bmax
     else
-        # Resuelve el máximo
+        # Get max
         res = Optim.optimize(obj_f, bmin, bmax, GoldenSection())
-        # Extrae el argmax
+        # Get argmax
         b_star = res.minimizer
     end
 
-    # Extrae v y c consistentes con b'
+    # Get v, c consistent with b'
     vp, c_star = eval_value(jb, jy, b_star, itp_q, itp_Ev, dd)
 
     return vp, c_star, b_star
@@ -213,15 +199,14 @@ end
 
 function value_default(jb, jy, dd::DebtMod)
     β, ψ = (dd.pars[sym] for sym in (:β, :ψ))
-    """ Calcula el valor de estar en default en el estado (b,y) """
+    """ Value of default at (b,y) """
     yv = dd.gr[:y][jy]
 
-    # Consumo en default es el ingreso menos los costos de default
     c = cons_in_default(yv, dd)
 
     c > 1e-2 || println("WARNING: negative c at (jb, jy) = ($jb, $jy)")
 
-    # Valor de continuación tiene en cuenta la probabilidad ψ de reacceder a mercados
+    # Continuation value includes chance of reaccessing markets
     Ev = 0.0
     for jyp in eachindex(dd.gr[:y])
         prob = dd.P[:y][jy, jyp]
@@ -281,26 +266,23 @@ function make_itp_vp(dd::DebtMod, jy, mat)
 end
 
 function vfi_iter!(new_v, itp_q, dd::DebtMod)
-    # Reconstruye la interpolación de la función de valor esperada
-    # itp_v = make_itp(dd, dd.v[:V]);
     
     Threads.@threads for jy in eachindex(dd.gr[:y])
         itp_Ev = make_itp_vp(dd, jy, dd.v[:V]);
         itp_def = make_itp_vp(dd, jy, dd.v[:prob]);
 
-        # bmax = borrowing_limit_q(jy, itp_q, dd)
         bmax = borrowing_limit(itp_def, dd)
         for jb in eachindex(dd.gr[:b])
         
-            # En repago
+            # Repayment
             vp, c_star, b_star = opt_value(jb, jy, bmax, itp_q, itp_Ev, dd)
 
-            # Guarda los valores para repago 
+            # Save values for repayment 
             dd.v[:R][jb, jy] = vp
             dd.gb[jb, jy] = b_star
             dd.gc[jb, jy, 1] = c_star
 
-            # En default
+            # In default
             cD, vD = value_default(jb, jy, dd)
             dd.v[:D][jb, jy] = vD
             dd.gc[jb, jy, 2] = cD
@@ -311,19 +293,19 @@ function vfi_iter!(new_v, itp_q, dd::DebtMod)
     itp_vD = make_itp(dd, dd.v[:D]);
     Vs = zeros(2)
     for (jb, bv) in enumerate(dd.gr[:b]), jy in eachindex(dd.gr[:y])
-        # Valor de repagar y defaultear llegando a (b,y)
+        # Value of repayment and default at (b,y)
         vr = dd.v[:R][jb, jy]
         vd = itp_vD((1 - ℏ) * bv, jy)
 
         Vs .= (vd, vr)
 
-        ## Modo 2: valor extremo tipo X evitando comparar exponenciales de cosas grandes
+        ## Numerically-stable log-sum-exp for value function (above eq. 4)
         lse = logsumexp(Vs ./ χ)
         lpr = vd / χ - lse
         pr = exp(lpr)
         V = χ * lse
 
-        # Guarda el valor y la probabilidad de default al llegar a (b,y)
+        # Save value function and ex-post default probability
         new_v[jb, jy] = V
         dd.v[:prob][jb, jy] = pr
     end
@@ -358,6 +340,7 @@ function value_lenders(bv, bpv, jy, py, coupon, itp_q, itp_def, itp_vL, dd::Debt
         bpv = bv
     end
 
+    # With robustness to preference shock (need to uncomment gr, w, x in v_lender_iter below and pass as arguments)
     # for js in axes(gr, 1)
     #     jyp, jζp = gr[js, :]   # jζp = 1 in rep, 2 in def
 
@@ -422,12 +405,12 @@ function v_lender_iter!(dd::Default, vL = dd.vL, q = dd.q, α = dd.pars[:α], τ
 end
 
 function q_iter!(new_q, new_qd, dd::Default)
-    """ Ecuación de Euler de los acreedores determinan el precio de la deuda dada la deuda, el ingreso, y el precio esperado de la deuda """
+    """ Lenders' Euler equation determines debt prices given debt, income, and expected debt prices """
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
-    # Interpola el precio de la deuda (para mañana)
-    itp_qd = make_itp(dd, dd.qD);
-    itp_q = make_itp(dd, dd.q);
+    # Interpolate debt prices for next period
+    itp_qd = make_itp(dd, dd.qD)
+    itp_q = make_itp(dd, dd.q)
 
     for (jbp, bpv) in enumerate(dd.gr[:b]), (jy, yv) in enumerate(dd.gr[:y])
         Eq = 0.0
@@ -436,30 +419,30 @@ function q_iter!(new_q, new_qd, dd::Default)
         sum_sdf_D = 0.0
         for (jyp, ypv) in enumerate(dd.gr[:y])
             prob_def = dd.v[:prob][jbp, jyp]
-        
+
             if θ > 1e-3
                 sdf_R = exp(-θ * dd.vL[jbp, jyp, 1])
                 sdf_D = exp(-θ * dd.vL[jbp, jyp, 2])
             else
-                sdf_R = 1.
-                sdf_D = 1.
+                sdf_R = 1.0
+                sdf_D = 1.0
             end
-        
+
             coupon = coupon_rate(ypv, dd)
-        
-            # Si el país tiene acceso a mercados, emite y puede hacer default mañana
+
+            # If access to markets, new issuance and can default tomorrow
             bpp = dd.gb[jbp, jyp]
             rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
-        
-            # Si el país está en default, mañana puede recuperar acceso a mercados
+
+            # If default, may reaccess markets
             rep_D = ψ * rep_R + (1 - ψ) * sdf_D * dd.qD[jbp, jyp]
-        
+
             prob = dd.P[:y][jy, jyp]
             Eq += prob * rep_R
             EqD += prob * rep_D
-        
+
             sum_sdf_R += prob * (prob_def * sdf_D + (1 - prob_def) * sdf_R)
-            sum_sdf_D += prob * ((1-ψ) * sdf_D + ψ * sdf_R)
+            sum_sdf_D += prob * ((1 - ψ) * sdf_D + ψ * sdf_R)
         end
         new_q[jbp, jy] = Eq / (1 + r) / sum_sdf_R
         new_qd[jbp, jy] = EqD / (1 + r) / sum_sdf_D
@@ -482,25 +465,25 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tin
 
         verbose && print("Iteration $iter: ")
 
-        # Actualiza el precio de la deuda
+        # Update debt prices
         v_lender_iter!(dd)
         q_iter!(new_q, new_qd, dd)
         dist_qR = norm(new_q - dd.q) / max(1, norm(dd.q))
         dist_qD = norm(new_qd - dd.qD)/max(1, norm(dd.qD))
         dist_q = max(dist_qD, dist_qR)
 
-        # Interpolación del precio de la deuda
+        # Interpolate new debt price
         itp_q = make_itp(dd, new_q);
 
-        # Actualiza la función de valor
+        # Update value function 
         vfi_iter!(new_v, itp_q, dd)
         norm_v = norm(dd.v[:V])
         dist_v = norm(new_v - dd.v[:V]) / max(1, norm_v)
 
-        # Distancias
+        # Distances
         dist = max(dist_q / 500, dist_v)
 
-        # Guardamos todo
+        # Save all
         dd.v[:V] .= new_v
         dd.q .= dd.q + upd_η * (new_q - dd.q)
         dd.qD .= dd.qD + upd_η * (new_qd - dd.qD)
@@ -518,7 +501,6 @@ function mpe!(dd::Default; tol=1e-6, maxiter=500, upd_η = 1., min_iter = 1, tin
     return dist < tol
 end
 
-# @time Optim.optimize(α -> -solve_eval_α(dd, α), -0.1, 8, GoldenSection())
 
 function solve_eval_ατ(dd::DebtMod, α, τ)
     dd.pars[:α] = α
@@ -527,5 +509,3 @@ function solve_eval_ατ(dd::DebtMod, α, τ)
     mpe!(dd)
     return dd.v[:V][1, ceil(Int, Ny/2)]
 end
-
-# Optim.optimize(x -> -solve_eval_ατ(dd, x[1], x[2]), [-0.1, minimum(dd.gr[:y])], [10, dd.gr[:y][floor(Int, length(dd.gr[:y])*0.6)]], [0, 0.0], Fminbox(NelderMead()))

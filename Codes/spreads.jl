@@ -161,7 +161,7 @@ get_spread(q, dd::DebtMod) = get_spread(q, dd.pars[:κ])
 
 
 function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
-    """ Ecuación de Euler de los acreedores determinan el precio de la deuda dada la deuda, el ingreso, y el precio esperado de la deuda """
+    """ Lenders' Euler equation determines debt prices given debt, income, and expected debt prices """
     ρ, ℏ, ψ, r, θ = (dd.pars[sym] for sym in (:ρ, :ℏ, :ψ, :r, :θ))
 
     # Interpola el precio de la deuda (para mañana)
@@ -186,11 +186,11 @@ function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
 
             coupon = coupon_rate(ypv, dd, α = α, τ = τ)
 
-            # Si el país tiene acceso a mercados, emite y puede hacer default mañana
+            # If access to markets, new issuance and can default tomorrow
             bpp = dd.gb[jbp, jyp]
             rep_R = (1 - prob_def) * sdf_R * (coupon + (1 - ρ) * itp_q(bpp, jyp)) + prob_def * sdf_D * (1 - ℏ) * itp_qd((1 - ℏ) * bpv, jyp)
 
-            # Si el país está en default, mañana puede recuperar acceso a mercados
+            # If default, may reaccess markets
             rep_D = ψ * rep_R + (1 - ψ) * sdf_D * old_qD[jbp, jyp]
 
             prob = dd.P[:y][jy, jyp]
