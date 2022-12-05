@@ -1,0 +1,3 @@
+                    & Noncontingent bond  & Linear bond         & Threshold bond      & Optimal bond        \\ 
+Benchmark           & 842                 & 845                 & 947                 & 829                 \\ 
+Rational Expectations& 893                 & 849                 & 367                 & 634                 \\ 

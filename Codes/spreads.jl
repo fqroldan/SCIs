@@ -205,37 +205,6 @@ function q_iter_local!(new_q, new_qd, α, τ, old_q, old_qD, dd::Default, vL)
     end
 end
 
-# function marginal_threshold_issue(dd::DebtMod; tol=1e-6, maxiter=500, verbose = false)
-
-#     iter = 0
-#     dist = 1+tol
-
-#     q  = copy(dd.q)
-#     qD = copy(dd.qD)
-
-#     new_q  = similar(dd.q)
-#     new_qD = similar(dd.qD)
-
-#     vL = similar(dd.vL)
-
-#     while dist > tol && iter < maxiter
-#         iter += 1
-
-#         v_lender_iter!(dd, vL, q, 1, 1)
-#         q_iter_local!(new_q, new_qD, q, qD, dd, vL)
-        
-#         dist_qR = norm(new_q - q) / max(1, norm(q))
-#         dist_qD = norm(new_qD - qD)/max(1, norm(qD))
-        
-#         dist = max(dist_qD, dist_qR)
-
-#         q  .= new_q
-#         qD .= new_qD
-#     end
-#     verbose && print("Done in $iter iterations")
-#     return q, qD
-# end
-
 function q_SDF_og(dd::DebtMod, α, τ, do_calc=true; tol=1e-6, maxiter=500, verbose = false)
     iter = 0
     dist = 1+tol

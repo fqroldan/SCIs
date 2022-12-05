@@ -167,10 +167,10 @@ end
 welfare(dd::DebtMod) = dot(dd.v[:V][1, :], stationary_distribution(dd))
 
 
-function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
+function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89, showtop = true)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
 
-    modelname = ifelse(dd.pars[:θ] > 1e-3, "Robustness", "R.E.")
+    modelname = ifelse(dd.pars[:θ] > 1e-3, "Benchmark", "Rational Expectations")
 
     w, t, m, ϵvv, ξvv = calib_targets(dd, showtable=true, uncond_K=10_000)
 
@@ -200,21 +200,24 @@ function MTI_all(dd::DebtMod; α = 2.5, τ = 0.89)
 
     rp = maximum(length(name) for name in names) + 2
 
-    print("\n")
-    print(rpad(" ", rp, " "))
-    for jn in eachindex(names)
-        print("& " * rpad(names[jn], rp, " "))
+    tab = ""
+
+    if showtop
+        tab *= rpad(" ", rp, " ")
+        for jn in eachindex(names)
+            tab *= "& " * rpad(names[jn], rp, " ")
+        end
+        tab *= "\\\\ \n"
     end
-    print("\\\\\n")
-    print(rpad(modelname, rp, " "))
+    tab *= rpad(modelname, rp, " ")
     for jn in eachindex(names)
         mti = @sprintf("%0.3g", MTI[jn])
-        print("& " * rpad(mti, rp, " "))
+        tab *= "& " * rpad(mti, rp, " ")
     end
-    print("\\\\\n")
+    tab *= "\\\\ \n"
+
+    tab
 end
-
-
 
 function compare_bonds(dd::DebtMod, α1, τ1, αRE, τRE)
 

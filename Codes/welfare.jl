@@ -64,119 +64,45 @@ function welfare_decomp_at_y(dd::DebtMod; kwargs...)
     return c[jy], c_ubar[jy], c_cbar[jy]
 end
 
-function welfare_decomp_opt(dd::DebtMod; α = 2.5, τ = 0.879)
+function welfare_decomp_opt(dd::DebtMod, dd_opt::DebtMod; showtop = false)
     @assert dd.pars[:α] == 0 && dd.pars[:τ] <= minimum(dd.gr[:y])
-    modelname = ifelse(dd.pars[:θ] > 1e-3, "Robustness", "R.E.")
+    modelname = ifelse(dd.pars[:θ] > 1e-3, "Benchmark", "Rational Expectations")
 
     c, c_ubar, c_cbar = welfare_decomp_at_y(dd)
 
-    dd.pars[:α] = α
-    dd.pars[:τ] = τ
-
-    mpe_simul!(dd, tol = 5e-6, maxiter=500, K=8, simul=false)
-
-    co, co_ubar, co_cbar = welfare_decomp_at_y(dd)
+    co, co_ubar, co_cbar = welfare_decomp_at_y(dd_opt)
 
     names = [
         "Total gains",
         "From default costs",
         "From volatility",
         "From level"
-        ]
+    ]
 
     qs = [
-        co / c,        
+        co / c,
         (co / co_ubar) / (c / c_ubar),
         (co_ubar / co_cbar) / (c_ubar / c_cbar),
-        co_cbar / c_cbar 
+        co_cbar / c_cbar
     ]
 
     rp = maximum(length(name) for name in names) + 2
 
 
-    print("\n")
-    print(rpad(" ", rp, " "))
-    for jn in eachindex(names)
-        print("& " * rpad(names[jn], rp, " "))
+    tab = ""
+    if showtop
+        tab *= rpad(" ", rp, " ")
+        for jn in eachindex(names)
+            tab *= "& " * rpad(names[jn], rp, " ")
+        end
+        tab *= "\\\\ \n"
     end
-    print("\\\\\n")
-    print(rpad(modelname, rp, " "))
+    tab *= rpad(modelname, rp, " ")
     for jn in eachindex(names)
-        Q = @sprintf("%0.3g", 100*(qs[jn]-1))
-        print("& " * rpad(Q, rp, " "))
+        Q = @sprintf("%0.3g", 100 * (qs[jn] - 1))
+        tab *= "& " * rpad(Q, rp, " ")
     end
-    print("\\\\\n")
-end
-
-### Stuff below unused
-
-
-function vfic!(dd::DebtMod; tol = 1e-6, maxiter = 2_000)
-
-    dist = 1+tol
-    iter = 0
+    tab *= "\\\\ \n"
     
-    vR = similar(dd.v[:R])
-    vD = similar(dd.v[:D])
-
-    new_v = similar(dd.v[:V])
-    old_v = copy(dd.v[:V])
-
-    itp_q = make_itp(dd, dd.q)
-
-    while dist > tol && iter < maxiter
-
-        iter += 1
-
-        itp_v = make_itp(dd, old_v)
-        vfic_iter!(new_v, vR, vD, dd, itp_q, itp_v)
-
-        dist = norm(new_v - old_v) / max(1, norm(old_v))
-
-        old_v .= new_v
-    end
-end
-
-function value_default(jb, jy, dd::DebtMod, itp_Ev, Evd)
-    β, ψ = (dd.pars[sym] for sym in (:β, :ψ))
-    """ Calcula el valor de estar en default en el estado (b,y) """
-    bv, yv = dd.gr[:b][jb], dd.gr[:y][jy]
-
-    Ev = ψ * itp_Ev(bv) + (1-ψ) * Evd[jb]
-
-    v = u(yv, dd) + β * Ev
-
-    return v
-end
-
-function vfic_iter!(new_v, vR, vD, dd::DebtMod, itp_q, old_v)
-    χ, ℏ = (dd.pars[key] for key in (:χ, :ℏ))
-    Threads.@threads for jy in eachindex(dd.gr[:y])
-        
-        itp_Ev = make_itp_vp(dd, jy, old_v);
-        Evd    = make_vp(dd, jy, vD)
-
-        for jb in eachindex(dd.gr[:b])
-            bp = dd.gb[jb, jy]
-            vR[jb, jy] = eval_value(jb, jy, bp, itp_q, itp_Ev, dd)
-
-            vD[jb, jy] = value_default(jb, jy, dd, itp_Ev, Evd)
-        end
-
-        itp_vd = make_itp_vp(dd, jy, vD)
-        vs = zeros(2)
-        for (jb, bv) in enumerate(dd.gr[:b])
-            vr = vR[jb, jy]
-            vd = itp_vd((1-ℏ)*bv)
-
-            vs .= (vd, vr)
-
-            lse = logsumexp(Vs ./ χ)
-            # lpr = vd / χ - lse
-            # pr = exp(lpr)
-            V = χ * lse
-
-            new_v[jb, jy] = V
-        end
-    end
+    tab
 end

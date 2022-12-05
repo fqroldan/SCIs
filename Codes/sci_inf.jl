@@ -77,7 +77,7 @@ function Default(;
 end
 
 info(dd::DebtMod) = Dict(
-    key => dd.pars[key] for key in (:β, :θ, :d1, :d2, :α, :τ, :χ, :κ, :Nb, :Ny, :bmax, :std_devs) if haskey(dd.pars, key)
+    key => dd.pars[key] for key in (:β, :θ, :d1, :d2, :α, :τ, :ℏ, :χ, :κ, :Nb, :Ny, :bmax, :std_devs) if haskey(dd.pars, key)
 )
 
 cons_equiv(v::Number, dd::DebtMod) = cons_equiv(v, dd.pars[:β], dd.pars[:γ])

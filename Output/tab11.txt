@@ -1,0 +1,11 @@
+Spread (bps)      & 815       & 792       & 849       \\
+Std Spread        & 443       & 335       & 401       \\
+Debt-to-GDP (\%)  & 17.4      & 13.7      & 12.1      \\
+Default Prob      & 3.0       & 3.2       & 6.0       \\\midrule 
+ & \multicolumn{3}{c}{Other moments} \\\midrule 
+Std(c)/Std(y)     & 0.87      & 1.1       & 1.2       \\
+Corr(y,c)         & 0.97      & 0.9       & 0.85      \\
+Corr(y,tb/y)      & -0.77     & -0.057    & 0.014     \\
+Corr(y,spread)    & -0.72     & -0.54     & -0.42     \\
+DEP               & -         & 40.1\%    & -         \\
+\bottomrule

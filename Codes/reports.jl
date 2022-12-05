@@ -53,6 +53,12 @@ function param_table(dd::DebtMod)
         τ
     ]
 
+    if dd.pars[:ℏ] != 1
+        push!(rownames, "Haircut upon default")
+        push!(param_names, "\$\\hslash\$")
+        push!(params, dd.pars[:ℏ])
+    end
+
     textpad = maximum(length(name) for name in rownames) + 2
     parpad = maximum(length(par) for par in param_names) + 2
     
@@ -110,13 +116,18 @@ function add_to_table(moments, sym, K = 10)
             val = @sprintf("%0.3g", value) * "\\%"
         end
     elseif sym == :welfare && value == 0
-        val = "-"
+            val = "-"
     elseif value > 999
         val = round(Int, value)
-    elseif abs(value) > 1
+    elseif abs(value) > 50
         val = @sprintf("%0.3g", value)
+    elseif abs(value) > 1
+        val = round(value, digits = 1)
     else
         val = round(value, sigdigits = 2)
+    end
+    if sym == :welfare && value != 0
+        val = "$val\\%"
     end
     return rpad(val, K, " ")
 end
@@ -177,10 +188,11 @@ function table_moments_with_DEP(pv::Vector{SimulPath}, pv_uncond::Vector{SimulPa
 end
 
 
-function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2_000, cond_K=1_000, rownames = false)
+function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, uncond_burn=2_000, uncond_T=4_000, cond_T=2_000, cond_K=1_000, rownames = false, div3 = false)
     
     ϵvv_unc, ξvv_unc = simulshocks(uncond_T, uncond_K)
     ϵvv, ξvv = simulshocks(cond_T, cond_K)
+    ϵ1, ξ1 = 0.,0.
 
     Z = length(dd_vec)
 
@@ -196,7 +208,13 @@ function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, unc
 
         pv_unc_vec[jp], _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv_unc, ξvv_unc, burn_in=uncond_burn, stopdef=false)
         
-        pv_vec[jp], _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
+        if jp > 1 && dd.pars[:θ] == dd_vec[jp-1].pars[:θ]
+            ϵv1, ξv1 = ϵ1, ξ1
+        else
+            ϵv1, ξv1 = ϵvv, ξvv
+        end
+
+        pv_vec[jp], ϵ1, ξ1 = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵv1, ξv1)
 
         if dd.pars[:θ] > 0
             _, DEP_vec[jp] = simul_dist(dd)
@@ -204,7 +222,8 @@ function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, unc
             DEP_vec[jp] = NaN
         end
 
-        W_vec[jp] = cons_equiv(welfare(dd), dd) / cons_equiv(welfare(dd_vec[1]), dd_vec[1]) - 1
+        div3 && jp >= 3 ? k = 3 : k = 1
+        W_vec[jp] = cons_equiv(welfare(dd), dd) / cons_equiv(welfare(dd_vec[k]), dd_vec[k]) - 1
     end
 
     table_moments_with_DEP(pv_unc_vec, pv_vec, DEP_vec, W_vec, namevec, rownames)
@@ -213,7 +232,7 @@ end
 
 function table_moments_with_DEP(pv_unc_vec::Vector{Vector{SimulPath}}, pv_vec::Vector{Vector{SimulPath}}, DEP_vec, W_vec, namevec, rownames)
 
-    syms = [:mean_spr, :sp_RE, :sp_MTI, :std_spr, :debt_gdp, :def_prob, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :welfare, :DEP]
+    syms = [:mean_spr, :sp_RE, :sp_MTI, :std_spr, :debt_gdp, :rel_vol, :corr_yc, :corr_ytb, :corr_ysp, :def_prob, :welfare, :DEP]
     names = ["Spread (bps)", "o/w Spread RE", "Spread MTI", "Std Spread", "Debt-to-GDP (\\%)", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)", "Default Prob (\\%)", "Welfare Gains", "DEP"]
     maxn = maximum(length(name) for name in names)
 
