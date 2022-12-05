@@ -116,15 +116,15 @@ function add_to_table(moments, sym, K = 10)
             val = @sprintf("%0.3g", value) * "\\%"
         end
     elseif sym == :welfare && value == 0
-            val = "-"
-    elseif sym == :def_prob
-        val = @sprintf("%0.3g", round(value, digits = 2))
+        val = "-"
     elseif value > 999
         val = round(Int, value)
     elseif abs(value) > 50
         val = @sprintf("%0.3g", value)
     elseif abs(value) > 1
         val = round(value, digits = 1)
+    elseif sym == :def_prob
+        val = @sprintf("%0.3g", round(value, digits = 2))
     else
         val = round(value, sigdigits = 2)
     end
