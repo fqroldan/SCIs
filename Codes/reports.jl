@@ -109,6 +109,10 @@ function add_to_table(moments, sym, K = 10)
         else
             val = @sprintf("%0.3g", value) * "\\%"
         end
+    elseif sym == :welfare && value == 0
+        val = "-"
+    elseif value > 999
+        val = @sprintf("%0.4g", value)
     else
         val = @sprintf("%0.3g", value)
     end
@@ -192,7 +196,11 @@ function comp_table(dd_vec::Vector{Default}, namevec = [""]; uncond_K=2_000, unc
         
         pv_vec[jp], _ = simulvec(dd, itp_yield, itp_qRE, itp_qdRE, itp_spr_og, ϵvv, ξvv)
 
-        _, DEP_vec[jp] = simul_dist(dd)
+        if dd.pars[:θ] > 0
+            _, DEP_vec[jp] = simul_dist(dd)
+        else
+            DEP_vec[jp] = NaN
+        end
 
         W_vec[jp] = cons_equiv(welfare(dd), dd) / cons_equiv(welfare(dd_vec[1]), dd_vec[1]) - 1
     end
@@ -207,7 +215,7 @@ function table_moments_with_DEP(pv_unc_vec::Vector{Vector{SimulPath}}, pv_vec::V
     names = ["Spread (bps)", "o/w Spread RE", "Spread MTI", "Std Spread", "Debt-to-GDP (\\%)", "Std(c)/Std(y)", "Corr(y,c)", "Corr(y,tb/y)", "Corr(y,spread)", "Default Prob (\\%)", "Welfare Gains", "DEP"]
     maxn = maximum(length(name) for name in names)
 
-    maxk = maximum(length(name) for name in namevec) + 2
+    maxk = max(10, maximum(length(name) for name in namevec) + 2)
 
     
     Z = length(pv_vec)

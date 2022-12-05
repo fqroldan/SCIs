@@ -16,7 +16,10 @@ tab4 = calib_table(dd, dd_RE)
 write(folder * "/tab4.txt", tab4)
 
 # Table 5: Different bond structures
+dd_vec = [load(input*"/dd_RE.jld2", key) for key in ("dd", "dd_threshold", "dd_linear")];
+tab5a = comp_table(dd_vec, rownames = true)
+
 dd_vec = [load(input*"/dd.jld2", key) for key in ("dd", "dd_threshold", "dd_linear")];
+tab5b = comp_table(dd_vec)
 
-tab5a = comp_table(dd_vec)
-
+write(folder * "/tab5.txt", tab5a * "\n\n" * tab5b)
