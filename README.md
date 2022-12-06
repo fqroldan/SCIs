@@ -2,7 +2,7 @@
 
 ## Replication package
 
-Codes are tested on Julia 1.7 or higher. TOML files are provided to ensure you have the same environment as the version which we ran for the paper. (Otherwise, you will need to install packages QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, Printf, Random, StatsBase, Dates, JLD2.)
+Codes are tested on Julia 1.7 and 1.8. TOML files are provided to ensure you have the same environment as the version which we ran for the paper. (Otherwise, you will need to install packages QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, Printf, Random, StatsBase, Dates, JLD2.)
 
 To run, point Julia to the SCI folder and ensure that "Codes" and "Output" are subfolders.
 
