@@ -1,6 +1,7 @@
 # Uncertainty Premia, Sovereign Default Risk, and State-Contingent Debt
 
 Francisco Roch (IMF) and Francisco Roldán (IMF)
+
 December 6, 2022
 
 Version submitted to JPE: Macroeconomics
