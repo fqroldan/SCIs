@@ -17,7 +17,7 @@ Running
 ```julia
 include("Codes/replication_2p.jl")
 ```
-will produce tab2.txt and fig2.pdf, fig3.pdf, fig4.pdf, and fig5.pdf corresponding to Table 2 and Figures 2 through 5 in the paper, for the 2-period model.
+will produce tab2.txt and fig2.pdf, fig3.pdf, fig4.pdf, and fig5.pdf corresponding to Table 2 and Figures 2 through 5 in the paper, for the two-period model.
 
 ### Infinite-horizon model (Sections 4 and 5)
 Running 
