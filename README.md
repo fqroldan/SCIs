@@ -1,5 +1,10 @@
 # Uncertainty Premia, Sovereign Default Risk, and State-Contingent Debt
 
+Francisco Roch (IMF) and Francisco Roldán (IMF)
+December 6, 2022
+
+Version submitted to JPE: Macroeconomics
+
 ## Replication package
 
 Codes are tested on Julia 1.7 and 1.8. TOML files are provided to ensure you have the same environment as the version which we ran for the paper. (Otherwise, you will need to install packages QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, Distributions, Printf, Random, StatsBase, Dates, JLD2.)
