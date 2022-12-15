@@ -1,7 +1,7 @@
 include("main_sci_inf.jl")
 
 # Point input to folder containing the JLD2 files
-input = "Output/"
+input = "Input/"
 # As before ensure folder "folder" exists
 folder = "Output/"
 

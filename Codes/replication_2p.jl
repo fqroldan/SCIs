@@ -1,6 +1,6 @@
 include("sci_2p_v17.jl")
 
-# Enter folder to save plots (make sure the folder exists)
+# Enter folder to save plots and tables (make sure the folder exists)
 folder = "Output/"
 
 Nθ = 9

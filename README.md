@@ -2,7 +2,7 @@
 
 Francisco Roch (IMF) and Francisco Roldán (IMF)
 
-December 6, 2022
+December 15, 2022
 
 Version submitted to JPE: Macroeconomics
 
@@ -10,7 +10,11 @@ Version submitted to JPE: Macroeconomics
 
 Codes are tested on Julia 1.7 and 1.8. TOML files are provided to ensure you have the same environment as the version which we ran for the paper. (Otherwise, you will need to install packages QuantEcon, Optim, Interpolations, LinearAlgebra, PlotlyJS, ColorSchemes, CSV, DataFrames, NLopt, ForwardDiff, Distributions, Printf, Random, StatsBase, Dates, JLD2.)
 
-To run, point Julia to the SCI folder and ensure that "Codes" and "Output" are subfolders.
+To run, point Julia to the SCI folder and ensure that "Codes", "Input", and "Output" are subfolders.
+
+## Codes
+
+Subfolder Codes contains all Julia programs needed to replicate the paper, as described below. Subfolder Input contains Julia JLD2 files containing solved versions of the relevant models. Subfolder Output contains all figures and tables as produced by our codes, except for Figure 1 which is taken from Igan et al (2021) and consists of fig1a.pdf, fig1b.pdf, and fig1c.pdf.
 
 ### Two-period model (Section 3)
 Running 
