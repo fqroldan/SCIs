@@ -1268,7 +1268,7 @@ function default_params(bench = 1)
 	return rb, rf, γ, Δ, g
 end
 
-function save_all_probs(;slides=true, dark = false, Nθ = 9)
+function save_all_probs(;slides=true, dark = false, Nθ = 9, folder = "output/")
 	jsli  = ifelse(slides, "_slides", "_paper")
 
 	dark ? jsli *= "_dark" : nothing
@@ -1291,36 +1291,36 @@ function save_all_probs(;slides=true, dark = false, Nθ = 9)
 			if jn == 1 && !reopt && slides
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, dark=dark, slides=slides, lw=lw, only_orig = true)
 
-				savefig(p1, "output/distorted_only_orig$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+				savefig(p1, folder * "/distorted_only_orig$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, dark=dark, slides=slides, lw=lw, only_OG_wdef = true)
 
-				savefig(p1, "output/distorted_only_OG_wdef$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+				savefig(p1, folder * "/distorted_only_OG_wdef$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 
 				p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, slides=slides, dark=dark, lw=lw, with_distort = true)
 
-				savefig(p1, "output/distorted_only_with_distort$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+				savefig(p1, folder * "/distorted_only_with_distort$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 			end
 
 			p1 = plot_probs(rb=rb, rf = rf, γ = γ, Δ=Δ, g=g, bench=nv, Nθ = Nθ, Nz = Nz, reopt=reopt, slides=slides, dark=dark, lw=lw)
 
 			reopt ? suf = "_reopt" : suf = ""
-			savefig(p1, "output/distorted_$nv"*suf*"$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+			savefig(p1, folder * "/distorted_$nv"*suf*"$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 		end
 	end
 	p1 = plots_arrow(Nz = 101, Nθ = Nθ, slides=slides, dark=dark, lw=lw+0.5)
-	savefig(p1, "output/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
+	savefig(p1, folder * "/arrow$(jsli).pdf", width = qwidth(slides), height=qheight(slides))
 end
 
-function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501)
+function save_all_spreads(;slides=true, dark = false, Nz = 5001, Nz_opt = 501, folder = "output/")
 	jsli = ifelse(slides, "_slides", "_paper")
 	dark ? jsli *= "_dark" : nothing
 
 	p1 = plot_parametric(Nz = Nz, slides=slides, dark = dark)
-	savefig(p1, "output/spreads_parametric$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
+	savefig(p1, folder*"/spreads_parametric$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
 
 	p1 = plot_optimal(Nz = Nz_opt, slides=slides, dark = dark)
-	savefig(p1, "output/spreads_optimal$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
+	savefig(p1, folder*"/spreads_optimal$(jsli).pdf", width = ceil(Int,1.25*qwidth(slides)), height=ceil(Int,1.15*qheight(true)))
 
 	nothing
 end
@@ -1331,8 +1331,8 @@ function save_all()
 		if slides 
 			darks = [true, false]
 		end
+		Nθ = ifelse(slides, 9, 5)
 		for dark in darks
-			Nθ = ifelse(slides, 9, 5)
 			save_all_probs(slides=slides, dark=dark, Nθ = Nθ)
 			save_all_spreads(slides=slides, dark=dark)
 		end
